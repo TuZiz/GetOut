@@ -84,10 +84,10 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                 }
 
                 eventRepository.insertEvent("BAN", target.getUuid(), target.getName(),
-                        reason, operatorName, settings.getServerId(), "");
+                        reason, operatorName, settings.getServerId(), "ban_id=" + banId);
 
                 if (settings.isSyncKickOnlineAfterBan()) {
-                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName);
+                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, banId);
                 }
 
                 adminNotifier.notifyPunishment("BAN", target.getName(), reason, operatorName, settings.getServerId(), false);
@@ -104,11 +104,12 @@ public class BanCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator) {
+    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, long banId) {
         scheduler.runGlobal(() -> {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
                 Map<String, String> placeholders = Map.of(
+                        "ban_id", String.valueOf(banId),
                         "reason", reason,
                         "operator", operator,
                         "time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date())

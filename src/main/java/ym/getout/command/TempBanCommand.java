@@ -94,12 +94,12 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                String payload = "expires_at=" + expiresAt;
+                String payload = "expires_at=" + expiresAt + "&ban_id=" + banId;
                 eventRepository.insertEvent("TEMPBAN", target.getUuid(), target.getName(),
                         reason, operatorName, settings.getServerId(), payload);
 
                 if (settings.isSyncKickOnlineAfterBan()) {
-                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, duration, expiresAt);
+                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, duration, expiresAt, banId);
                 }
 
                 adminNotifier.notifyPunishment("TEMPBAN", target.getName(), reason, operatorName, settings.getServerId(), false);
@@ -116,12 +116,13 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String duration, long expiresAt) {
+    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String duration, long expiresAt, long banId) {
         scheduler.runGlobal(() -> {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
                 SimpleDateFormat fmt = new SimpleDateFormat(settings.getTimeFormat());
                 Map<String, String> placeholders = Map.of(
+                        "ban_id", String.valueOf(banId),
                         "reason", reason,
                         "operator", operator,
                         "duration", duration,

@@ -78,39 +78,42 @@ public class EventProcessor {
     }
 
     private void handleBanEvent(SyncEvent event) {
+        Long banId = parseLongPayload(event.getPayload(), "ban_id");
         if (settings.isSyncKickOnlineAfterBan()) {
-            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "BAN", null);
+            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "BAN", null, banId);
         }
         adminNotifier.notifyPunishment("BAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void handleTempBanEvent(SyncEvent event) {
-        Long expiresAt = parseExpiresAt(event.getPayload());
+        Long expiresAt = parseLongPayload(event.getPayload(), "expires_at");
+        Long banId = parseLongPayload(event.getPayload(), "ban_id");
         if (settings.isSyncKickOnlineAfterBan()) {
-            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "TEMPBAN", expiresAt);
+            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "TEMPBAN", expiresAt, banId);
         }
         adminNotifier.notifyPunishment("TEMPBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void handleKickEvent(SyncEvent event) {
-        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null);
+        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null, null);
         adminNotifier.notifyPunishment("KICK", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
-    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt) {
+    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt, Long banId) {
         scheduler.runGlobal(() -> {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
-                Component kickMessage = buildKickMessage(eventType, name, reason, operator, expiresAt);
+                Component kickMessage = buildKickMessage(eventType, name, reason, operator, expiresAt, banId);
                 player.kick(kickMessage);
                 LoggerUtil.info("Kicked synced player: " + name);
             }
         });
     }
 
-    private Component buildKickMessage(String eventType, String name, String reason, String operator, Long expiresAt) {
+    private Component buildKickMessage(String eventType, String name, String reason, String operator, Long expiresAt, Long banId) {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("player", name != null ? name : "");
+        placeholders.put("ban_id", banId != null ? String.valueOf(banId) : "未知");
         placeholders.put("reason", reason != null ? reason : "");
         placeholders.put("operator", operator != null ? operator : "Console");
         placeholders.put("time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date()));
@@ -125,11 +128,11 @@ public class EventProcessor {
         return messages.getComponentList(path, placeholders);
     }
 
-    private Long parseExpiresAt(String payload) {
+    private Long parseLongPayload(String payload, String key) {
         if (payload == null || payload.isBlank()) return null;
         for (String part : payload.split("&")) {
             String[] kv = part.split("=", 2);
-            if (kv.length == 2 && "expires_at".equalsIgnoreCase(kv[0])) {
+            if (kv.length == 2 && key.equalsIgnoreCase(kv[0])) {
                 try {
                     return Long.parseLong(kv[1]);
                 } catch (NumberFormatException ignored) {

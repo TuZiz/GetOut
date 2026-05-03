@@ -1,0 +1,69 @@
+# Getout 配置文件
+
+# 本机服唯一标识。启用数据库存储时，所有子服必须不同。
+server-id: "server-1"
+
+# 是否输出调试日志。
+debug: false
+
+# 数据库不可用时的登录策略。
+# true = 放行登录
+# false = 拒绝登录
+fail-open-on-database-error: true
+
+# 存储模式：
+# yaml = 本地 YAML 存储
+# database = 共享数据库存储，才支持跨服同步
+storage:
+  type: yaml
+
+# 数据库配置只在 storage.type = database 时生效。
+database:
+  # 数据库类型：mysql / mariadb / postgresql / sqlite
+  type: mysql
+
+  # 主机地址。
+  host: localhost
+  port: 3306
+  database: getout
+  username: root
+  password: password
+  table-prefix: "getout_"
+  pool:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    connection-timeout-ms: 30000
+    max-lifetime-ms: 1800000
+sync:
+  # 轮询间隔，单位 tick。
+  poll-interval-ticks: 20
+
+  # 事件保留天数。
+  event-retention-days: 7
+
+  # 封禁后是否踢出当前在线玩家。
+  kick-online-after-ban: true
+
+  # 是否处理本服自己写出的事件。
+  process-own-events: false
+
+# 缓存设置。
+cache:
+  # PAPI 缓存秒数。
+  papi-cache-seconds: 30
+
+  # 玩家索引缓存秒数。
+  player-index-cache-seconds: 300
+
+# 时间显示设置。
+time:
+  # 时区。
+  zone-id: "Asia/Shanghai"
+
+  # 时间格式。
+  format: "yyyy-MM-dd HH:mm:ss"
+
+# 消息设置。
+messages:
+  # 语言文件名。
+  lang: zh_cn

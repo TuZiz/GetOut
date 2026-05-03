@@ -1,0 +1,42 @@
+name: Getout
+version: '${project.version}'
+main: ym.getout.GetoutPlugin
+api-version: '1.16'
+description: A lightweight cross-server ban plugin
+authors: [ ymxc ]
+
+permissions:
+  getout.command.ban:
+    description: Allows banning players
+    default: op
+  getout.command.tempban:
+    description: Allows temp-banning players
+    default: op
+  getout.command.kick:
+    description: Allows kicking players
+    default: op
+  getout.admin:
+    description: Full access to Getout commands
+    default: op
+    children:
+      getout.command.ban: true
+      getout.command.tempban: true
+      getout.command.kick: true
+
+commands:
+  ban:
+    description: Permanently ban a player
+    usage: /ban <player|uuid> [reason]
+    permission: getout.command.ban
+  tempban:
+    description: Temporarily ban a player
+    usage: /tempban <player|uuid> <duration> [reason]
+    permission: getout.command.tempban
+  kick:
+    description: Kick a player
+    usage: /kick <player|uuid> [reason]
+    permission: getout.command.kick
+  getout:
+    description: Getout admin commands
+    usage: /getout <reload|info>
+    permission: getout.admin

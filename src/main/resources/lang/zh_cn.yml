@@ -1,0 +1,87 @@
+prefix: "<gradient:#FF416C:#FF4B2B><b>[系统裁决]</b></gradient> <#7F7FD5>»</#7F7FD5> "
+
+general:
+  loading: "<prefix><#F6D365>系统核心正在唤醒中，请稍作等待...</#F6D365>"
+  player-not-found: "<prefix><#FF4C4C>数据迷失</#FF4C4C> <#E0E0E0>| 未曾记录过名为 <#FFAAAA><player></#FFAAAA> 的旅者。</#E0E0E0>"
+  target-offline: "<prefix><#FF4C4C>目标离线</#FF4C4C> <#E0E0E0>| 玩家 <#FFAAAA><player></#FFAAAA> 当前不在本世界。</#E0E0E0>"
+  database-error: "<prefix><#FF4C4C>致命错误</#FF4C4C> <#E0E0E0>| 数据库连接断层，请火速检阅后台日志！</#E0E0E0>"
+  invalid-time: "<prefix><#FF4C4C>格式异常</#FF4C4C> <#E0E0E0>| 请使用标准时间格式，例如：<#A1FFCE>1d2h30m</#A1FFCE></#E0E0E0>"
+  no-permission: "<prefix><#FF4C4C>拒绝访问</#FF4C4C> <#E0E0E0>| 您尚未掌握执行此指令的权柄。</#E0E0E0>"
+  player-only: "<prefix><#FF4C4C>虚空指令</#FF4C4C> <#E0E0E0>| 该命令仅限实体玩家在游戏内执行。</#E0E0E0>"
+  reload-success: "<prefix><#43E97B>重载完毕</#43E97B> <#E0E0E0>| 语言与核心配置已刷新并生效。</#E0E0E0>"
+  unknown-command: "<prefix><#FF4C4C>未知指令</#FF4C4C> <#E0E0E0>| 查阅迷航指南：输入 <#A1FFCE>/getout</#A1FFCE> 查看帮助。</#E0E0E0>"
+
+ban:
+  usage: "<prefix><#F6D365>使用指引</#F6D365> <#E0E0E0>| <#A1FFCE>/ban <玩家名|UUID> [缘由]</#A1FFCE></#E0E0E0>"
+  success: "<prefix><#FF4C4C>永久封禁</#FF4C4C> <#E0E0E0>| 已将 <#FFAAAA><player></#FFAAAA> 永久逐出本服。缘由：<#F6D365><reason></#F6D365></#E0E0E0>"
+  default-reason: "严重触犯本域法则，执行终极抹除。"
+  kick-message:
+    - "<#FF416C><b>☠ 您已被本服务器永久放逐 ☠</b></#FF416C>"
+    - ""
+    - "<#E0E0E0>您在此界的旅途已画上句号。</#E0E0E0>"
+    - ""
+    - "<#F6D365>裁决缘由 <#7F7FD5>»</#7F7FD5> <#FFFFFF><reason></#FFFFFF>"
+    - "<#F6D365>执行法官 <#7F7FD5>»</#7F7FD5> <#FFFFFF><operator></#FFFFFF>"
+    - "<#F6D365>裁决时间 <#7F7FD5>»</#7F7FD5> <#FFFFFF><time></#FFFFFF>"
+    - ""
+    - "<#A1FFCE>如需申诉，请前往社区中心提交申请。</#A1FFCE>"
+
+tempban:
+  usage: "<prefix><#F6D365>使用指引</#F6D365> <#E0E0E0>| <#A1FFCE>/tempban <玩家名|UUID> <时长> [缘由]</#A1FFCE></#E0E0E0>"
+  success: "<prefix><#F6D365>临时封禁</#F6D365> <#E0E0E0>| 已将 <#FFAAAA><player></#FFAAAA> 暂时驱逐，时长：<#A1FFCE><duration></#A1FFCE>。缘由：<#F6D365><reason></#F6D365></#E0E0E0>"
+  default-reason: "触犯服务器法则，请冷静一段时间。"
+  kick-message:
+    - "<#F6D365><b>⚠ 您已被本服务器暂时驱逐 ⚠</b></#F6D365>"
+    - ""
+    - "<#E0E0E0>请在冷静期后重新回归本界。</#E0E0E0>"
+    - ""
+    - "<#F6D365>裁决缘由 <#7F7FD5>»</#7F7FD5> <#FFFFFF><reason></#FFFFFF>"
+    - "<#F6D365>冻结时长 <#7F7FD5>»</#7F7FD5> <#FFFFFF><left></#FFFFFF>"
+    - "<#F6D365>解封时间 <#7F7FD5>»</#7F7FD5> <#FFFFFF><expire></#FFFFFF>"
+    - "<#F6D365>执行法官 <#7F7FD5>»</#7F7FD5> <#FFFFFF><operator></#FFFFFF>"
+
+kick:
+  usage: "<prefix><#F6D365>使用指引</#F6D365> <#E0E0E0>| <#A1FFCE>/kick <玩家名|UUID> [缘由]</#A1FFCE></#E0E0E0>"
+  success: "<prefix><#F6D365>强制踢出</#F6D365> <#E0E0E0>| 已将 <#FFAAAA><player></#FFAAAA> 强制移出。缘由：<#F6D365><reason></#F6D365></#E0E0E0>"
+  default-reason: "您已被管理员请离当前连接。"
+  message:
+    - "<#FF9966><b>✦ 连接中断 ✦</b></#FF9966>"
+    - ""
+    - "<#E0E0E0>您已被强制断开与本界的连接。</#E0E0E0>"
+    - ""
+    - "<#F6D365>断开缘由 <#7F7FD5>»</#7F7FD5> <#FFFFFF><reason></#FFFFFF>"
+    - "<#F6D365>执行法官 <#7F7FD5>»</#7F7FD5> <#FFFFFF><operator></#FFFFFF>"
+
+login:
+  banned:
+    - "<#FF416C><b>☠ 您的灵魂已被本界永久拒载 ☠</b></#FF416C>"
+    - ""
+    - "<#F6D365>裁决缘由 <#7F7FD5>»</#7F7FD5> <#FFFFFF><reason></#FFFFFF>"
+    - "<#F6D365>执行法官 <#7F7FD5>»</#7F7FD5> <#FFFFFF><operator></#FFFFFF>"
+    - "<#F6D365>裁决时间 <#7F7FD5>»</#7F7FD5> <#FFFFFF><time></#FFFFFF>"
+  temp-banned:
+    - "<#F6D365><b>⚠ 您目前仍处于冷静期中 ⚠</b></#F6D365>"
+    - ""
+    - "<#F6D365>裁决缘由 <#7F7FD5>»</#7F7FD5> <#FFFFFF><reason></#FFFFFF>"
+    - "<#F6D365>剩余时间 <#7F7FD5>»</#7F7FD5> <#FFFFFF><left></#FFFFFF>"
+    - "<#F6D365>解封时间 <#7F7FD5>»</#7F7FD5> <#FFFFFF><expire></#FFFFFF>"
+    - "<#F6D365>执行法官 <#7F7FD5>»</#7F7FD5> <#FFFFFF><operator></#FFFFFF>"
+  database-fail-close:
+    - "<#FF4C4C><b>✖ 服务器连接故障 ✖</b></#FF4C4C>"
+    - "<#E0E0E0>制裁系统数据同步失败，为保护核心安全，暂时拒绝访问。</#E0E0E0>"
+    - "<#E0E0E0>请稍候片刻再试，或联系管理员。</#E0E0E0>"
+
+info:
+  header: "<prefix><#84FAB0><b>✦ 核心节点信息 ✦</b></#84FAB0>"
+  version: "<#84FAB0>运转版本 <#7F7FD5>»</#7F7FD5> <#FFFFFF><version></#FFFFFF>"
+  server-id: "<#84FAB0>节点代号 <#7F7FD5>»</#7F7FD5> <#FFFFFF><server_id></#FFFFFF>"
+  database: "<#84FAB0>数据源流 <#7F7FD5>»</#7F7FD5> <#FFFFFF><type> @ <host>:<port>/<database></#FFFFFF>"
+  polling: "<#84FAB0>数据轮询 <#7F7FD5>»</#7F7FD5> <#FFFFFF><interval> 刻(ticks)</#FFFFFF>"
+
+placeholder:
+  yes: "<#43E97B>✔ 确认</#43E97B>"
+  no: "<#FF4C4C>✖ 否决</#FF4C4C>"
+  none: "<#A0A0A0>暂无记录</#A0A0A0>"
+  never: "<#FF416C>永世</#FF416C>"
+  unknown: "<#F6D365>迷雾(未知)</#F6D365>"
+  loading: "<#A1FFCE>数据流转中...</#A1FFCE>"

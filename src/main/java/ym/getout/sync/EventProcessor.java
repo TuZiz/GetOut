@@ -72,6 +72,7 @@ public class EventProcessor {
         switch (event.getEventType()) {
             case "BAN" -> handleBanEvent(event);
             case "TEMPBAN" -> handleTempBanEvent(event);
+            case "UNBAN" -> handleUnbanEvent(event);
             case "KICK" -> handleKickEvent(event);
             default -> LoggerUtil.debug("Unknown event type: " + event.getEventType());
         }
@@ -97,6 +98,11 @@ public class EventProcessor {
     private void handleKickEvent(SyncEvent event) {
         kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null, null);
         adminNotifier.notifyPunishment("KICK", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
+    }
+
+    private void handleUnbanEvent(SyncEvent event) {
+        banRepository.deactivateBan(event.getTargetUuid());
+        adminNotifier.notifyPunishment("UNBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt, Long banId) {

@@ -12,6 +12,9 @@ permissions:
   getout.command.tempban:
     description: Allows temp-banning players
     default: op
+  getout.command.unban:
+    description: Allows unbanning players
+    default: op
   getout.command.kick:
     description: Allows kicking players
     default: op
@@ -24,6 +27,7 @@ permissions:
     children:
       getout.command.ban: true
       getout.command.tempban: true
+      getout.command.unban: true
       getout.command.kick: true
       getout.notify: true
 
@@ -36,6 +40,10 @@ commands:
     description: Temporarily ban a player
     usage: /tempban <player|uuid> <duration> [reason]
     permission: getout.command.tempban
+  unban:
+    description: Unban a player
+    usage: /unban <player|uuid> [reason]
+    permission: getout.command.unban
   kick:
     description: Kick a player
     usage: /kick <player|uuid> [reason]

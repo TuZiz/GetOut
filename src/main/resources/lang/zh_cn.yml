@@ -38,6 +38,12 @@ tempban:
     - "<#A0AEC0>释放时间 <#CBD5E1>▪</#CBD5E1> <#00E1D9><expire></#00E1D9>"
     - "<#A0AEC0>执行高管 <#CBD5E1>▪</#CBD5E1> <#4FACFE><operator></#4FACFE>"
 
+unban:
+  usage: "<prefix><#FEE140>系统指引</#FEE140> <#A0AEC0>| <#00E1D9>/unban <玩家名|UUID> [解封理由]</#00E1D9></#A0AEC0>"
+  success: "<prefix><#00F2FE>封禁解除</#00F2FE> <#A0AEC0>| 已解除 <#FF7676><player></#FF7676> 的封禁记录 <#FEE140>#<ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  not-banned: "<prefix><#FEE140>无需处理</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 当前没有生效中的封禁记录。</#A0AEC0>"
+  default-reason: "管理员手动解除封禁"
+
 kick:
   usage: "<prefix><#FEE140>系统指引</#FEE140> <#A0AEC0>| <#00E1D9>/kick <玩家名|UUID> [驱逐理由]</#00E1D9></#A0AEC0>"
   success: "<prefix><#FF9A44>强制驱逐</#FF9A44> <#A0AEC0>| 已强制中断 <#FF7676><player></#FF7676> 的连接。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
@@ -90,4 +96,5 @@ admin-notify:
   generic: "<prefix><#64748B>[<scope>]</#64748B> <#FEE140><type></#FEE140> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   ban: "<prefix><#FF4B4B>[<scope> BAN]</#FF4B4B> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   tempban: "<prefix><#FA709A>[<scope> TBAN]</#FA709A> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
+  unban: "<prefix><#00F2FE>[<scope> UNBAN]</#00F2FE> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   kick: "<prefix><#FF9A44>[<scope> KICK]</#FF9A44> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"

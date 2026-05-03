@@ -1,5 +1,6 @@
 package ym.getout.command;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
 import ym.getout.lang.MessageService;
 import ym.getout.model.PlayerIndex;
+import ym.getout.notify.AdminNotifier;
 import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
@@ -28,16 +30,19 @@ public class BanCommand implements CommandExecutor, TabCompleter {
     private final MessageService messages;
     private final Settings settings;
     private final SchedulerAdapter scheduler;
+    private final AdminNotifier adminNotifier;
 
     public BanCommand(PlayerStore playerRepository, BanStore banRepository,
                       EventStore eventRepository, MessageService messages,
-                      Settings settings, SchedulerAdapter scheduler) {
+                      Settings settings, SchedulerAdapter scheduler,
+                      AdminNotifier adminNotifier) {
         this.playerRepository = playerRepository;
         this.banRepository = banRepository;
         this.eventRepository = eventRepository;
         this.messages = messages;
         this.settings = settings;
         this.scheduler = scheduler;
+        this.adminNotifier = adminNotifier;
     }
 
     @Override
@@ -85,6 +90,8 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                     kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName);
                 }
 
+                adminNotifier.notifyPunishment("BAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "ban.success",
                         Map.of("player", target.getName(), "reason", reason)));
 
@@ -106,9 +113,8 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                         "operator", operator,
                         "time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date())
                 );
-                List<String> lines = messages.getFormattedList("ban.kick-message", placeholders);
-                String kickMsg = String.join("\n", lines);
-                player.kickPlayer(kickMsg);
+                Component kickMessage = messages.getComponentList("ban.kick-message", placeholders);
+                player.kick(kickMessage);
             }
         });
     }

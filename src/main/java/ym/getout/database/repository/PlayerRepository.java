@@ -33,14 +33,18 @@ public class PlayerRepository implements PlayerStore {
      */
     public void upsert(UUID uuid, String name, String serverId) {
         checkMainThread();
-        String sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
-                "VALUES (?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE name = VALUES(name), name_lower = VALUES(name_lower), " +
-                "last_seen_at = VALUES(last_seen_at), last_server = VALUES(last_server)";
-
-        if (db.getDialect() == ym.getout.database.SqlDialect.SQLITE) {
-            sql = "INSERT OR REPLACE INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
+        String sql;
+        switch (db.getDialect()) {
+            case POSTGRESQL -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
+                    "VALUES (?, ?, ?, ?, ?) " +
+                    "ON CONFLICT (uuid) DO UPDATE SET name = EXCLUDED.name, name_lower = EXCLUDED.name_lower, " +
+                    "last_seen_at = EXCLUDED.last_seen_at, last_server = EXCLUDED.last_server";
+            case SQLITE -> sql = "INSERT OR REPLACE INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
                     "VALUES (?, ?, ?, ?, ?)";
+            default -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
+                    "VALUES (?, ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE name = VALUES(name), name_lower = VALUES(name_lower), " +
+                    "last_seen_at = VALUES(last_seen_at), last_server = VALUES(last_server)";
         }
 
         try (Connection conn = db.getConnection();

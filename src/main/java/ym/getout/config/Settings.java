@@ -13,6 +13,7 @@ public class Settings {
 
     // Storage
     private String storageType = "yaml";
+    private String databaseFailureStrategy = "fail-fast";
 
     // Database
     private String dbType = "mysql";
@@ -31,7 +32,14 @@ public class Settings {
     private long syncPollIntervalTicks = 20;
     private int syncEventRetentionDays = 7;
     private boolean syncKickOnlineAfterBan = true;
+    private boolean kickCrossServer = true;
     private boolean syncProcessOwnEvents = false;
+    private long expiredBanCleanupIntervalTicks = 6000L;
+
+    // Admin notifications
+    private boolean adminNotifyEnabled = true;
+    private String adminNotifyPermission = "getout.notify";
+    private boolean adminNotifyConsole = true;
 
     // Cache
     private int papiCacheSeconds = 30;
@@ -56,6 +64,7 @@ public class Settings {
         failOpenOnDatabaseError = config.getBoolean("fail-open-on-database-error", true);
 
         storageType = config.getString("storage.type", "yaml").toLowerCase();
+        databaseFailureStrategy = config.getString("storage.database-failure-strategy", "fail-fast").toLowerCase();
 
         dbType = config.getString("database.type", "mysql");
         dbHost = config.getString("database.host", "localhost");
@@ -72,7 +81,13 @@ public class Settings {
         syncPollIntervalTicks = config.getLong("sync.poll-interval-ticks", 20);
         syncEventRetentionDays = config.getInt("sync.event-retention-days", 7);
         syncKickOnlineAfterBan = config.getBoolean("sync.kick-online-after-ban", true);
+        kickCrossServer = config.getBoolean("kick.cross-server", true);
         syncProcessOwnEvents = config.getBoolean("sync.process-own-events", false);
+        expiredBanCleanupIntervalTicks = config.getLong("cleanup.expired-ban-interval-ticks", 6000L);
+
+        adminNotifyEnabled = config.getBoolean("admin-notify.enabled", true);
+        adminNotifyPermission = config.getString("admin-notify.permission", "getout.notify");
+        adminNotifyConsole = config.getBoolean("admin-notify.console", true);
 
         papiCacheSeconds = config.getInt("cache.papi-cache-seconds", 30);
         playerIndexCacheSeconds = config.getInt("cache.player-index-cache-seconds", 300);
@@ -90,6 +105,9 @@ public class Settings {
     public boolean isFailOpenOnDatabaseError() { return failOpenOnDatabaseError; }
     public String getStorageType() { return storageType; }
     public boolean isDatabaseEnabled() { return "database".equals(storageType); }
+    public void setStorageType(String storageType) { this.storageType = storageType == null ? "yaml" : storageType.toLowerCase(); }
+    public String getDatabaseFailureStrategy() { return databaseFailureStrategy; }
+    public boolean isDatabaseFallbackYamlEnabled() { return "fallback-yaml".equals(databaseFailureStrategy); }
 
     public String getDbType() { return dbType; }
     public String getDbHost() { return dbHost; }
@@ -106,7 +124,13 @@ public class Settings {
     public long getSyncPollIntervalTicks() { return syncPollIntervalTicks; }
     public int getSyncEventRetentionDays() { return syncEventRetentionDays; }
     public boolean isSyncKickOnlineAfterBan() { return syncKickOnlineAfterBan; }
+    public boolean isKickCrossServer() { return kickCrossServer; }
     public boolean isSyncProcessOwnEvents() { return syncProcessOwnEvents; }
+    public long getExpiredBanCleanupIntervalTicks() { return expiredBanCleanupIntervalTicks; }
+
+    public boolean isAdminNotifyEnabled() { return adminNotifyEnabled; }
+    public String getAdminNotifyPermission() { return adminNotifyPermission; }
+    public boolean isAdminNotifyConsole() { return adminNotifyConsole; }
 
     public int getPapiCacheSeconds() { return papiCacheSeconds; }
     public int getPlayerIndexCacheSeconds() { return playerIndexCacheSeconds; }

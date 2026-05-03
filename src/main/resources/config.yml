@@ -1,57 +1,88 @@
 # Getout 配置文件
 
-# 本机服唯一标识。启用数据库存储时，所有子服必须不同。
+# 本机服务唯一标识。启用数据库存储后，所有子服必须不同。
 server-id: "server-1"
 
 # 是否输出调试日志。
 debug: false
 
-# 数据库不可用时的登录策略。
+# 数据库不可用时是否放行登录。
 # true = 放行登录
 # false = 拒绝登录
 fail-open-on-database-error: true
 
-# 存储模式：
+# 存储模式。
 # yaml = 本地 YAML 存储
-# database = 共享数据库存储，才支持跨服同步
+# database = 共享数据库存储，支持跨服同步
 storage:
+  # 存储类型开关，只需要改这一项就能切换 YAML 和数据库。
   type: yaml
+  # 数据库启动失败时的策略。
+  # fail-fast = 直接禁用插件
+  # fallback-yaml = 自动回退到本地 YAML
+  database-failure-strategy: fail-fast
 
-# 数据库配置只在 storage.type = database 时生效。
+# 数据库配置，仅在 storage.type = database 时使用。
 database:
   # 数据库类型：mysql / mariadb / postgresql / sqlite
   type: mysql
-
-  # 主机地址。
+  # 数据库主机地址。
   host: localhost
+  # 数据库端口。
   port: 3306
+  # 数据库名称。
   database: getout
+  # 数据库用户名。
   username: root
+  # 数据库密码。
   password: password
+  # 表名前缀。
   table-prefix: "getout_"
+  # 连接池设置。
   pool:
+    # 最大连接数。
     maximum-pool-size: 10
+    # 最小空闲连接数。
     minimum-idle: 2
+    # 获取连接超时时间，单位毫秒。
     connection-timeout-ms: 30000
+    # 单个连接最大存活时间，单位毫秒。
     max-lifetime-ms: 1800000
+
+# 同步与清理设置。
 sync:
-  # 轮询间隔，单位 tick。
+  # 同步事件轮询间隔，单位 tick。
   poll-interval-ticks: 20
-
-  # 事件保留天数。
+  # 同步事件保留天数。
   event-retention-days: 7
-
-  # 封禁后是否踢出当前在线玩家。
+  # 封禁后是否立即踢出当前在线玩家。
   kick-online-after-ban: true
-
-  # 是否处理本服自己写出的事件。
+  # 是否处理本服自己写出的同步事件。
   process-own-events: false
+
+# 踢出设置。
+kick:
+  # 是否允许通过玩家索引跨服踢出目标。
+  cross-server: true
+
+# 过期清理设置。
+cleanup:
+  # 临时封禁过期清理间隔，单位 tick。
+  expired-ban-interval-ticks: 6000
+
+# 管理员通知设置。
+admin-notify:
+  # 是否向带权限的人广播惩戒通知。
+  enabled: true
+  # 通知权限节点。
+  permission: getout.notify
+  # 是否同时输出到控制台。
+  console: true
 
 # 缓存设置。
 cache:
-  # PAPI 缓存秒数。
+  # PlaceholderAPI 缓存秒数。
   papi-cache-seconds: 30
-
   # 玩家索引缓存秒数。
   player-index-cache-seconds: 300
 
@@ -59,11 +90,10 @@ cache:
 time:
   # 时区。
   zone-id: "Asia/Shanghai"
-
   # 时间格式。
   format: "yyyy-MM-dd HH:mm:ss"
 
-# 消息设置。
+# 语言设置。
 messages:
   # 语言文件名。
   lang: zh_cn

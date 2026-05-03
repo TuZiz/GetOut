@@ -39,8 +39,13 @@ public class SyncService {
         // 定时轮询同步事件
         scheduler.runTimerAsync(this::poll, interval, interval);
 
-        // 定时清理过期封禁和事件（每 5 分钟）
-        scheduler.runTimerAsync(this::cleanup, 6000L, 6000L);
+        // 启动时先清理一次，再按配置周期清理
+        scheduler.runAsync(this::cleanup);
+        long cleanupInterval = settings.getExpiredBanCleanupIntervalTicks();
+        if (cleanupInterval < 20L) {
+            cleanupInterval = 6000L;
+        }
+        scheduler.runTimerAsync(this::cleanup, cleanupInterval, cleanupInterval);
 
         LoggerUtil.info("Sync service started (poll interval: " + interval + " ticks)");
     }

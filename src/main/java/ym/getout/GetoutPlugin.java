@@ -18,6 +18,7 @@ import ym.getout.database.schema.SchemaInitializer;
 import ym.getout.lang.MessageService;
 import ym.getout.listener.JoinListener;
 import ym.getout.listener.LoginListener;
+import ym.getout.notify.AdminNotifier;
 import ym.getout.placeholder.GetoutPlaceholderExpansion;
 import ym.getout.placeholder.PlaceholderCache;
 import ym.getout.scheduler.SchedulerAdapter;
@@ -47,6 +48,9 @@ public class GetoutPlugin extends JavaPlugin {
     private EventProcessor eventProcessor;
     private SyncService syncService;
     private PlaceholderCache placeholderCache;
+    private AdminNotifier adminNotifier;
+    private volatile boolean componentsEnabled = false;
+    private volatile String runtimeStorageType = "uninitialized";
 
     @Override
     public void onEnable() {
@@ -62,51 +66,80 @@ public class GetoutPlugin extends JavaPlugin {
         messageService = new MessageService(getDataFolder(), settings.getLang());
         messageService.init();
 
+        placeholderCache = new PlaceholderCache(settings.getPapiCacheSeconds());
+        adminNotifier = new AdminNotifier(settings, messageService);
+
         if (settings.isDatabaseEnabled()) {
             databaseManager = new DatabaseManager(settings);
-            playerStore = new PlayerRepository(databaseManager, settings);
-            banStore = new BanRepository(databaseManager, settings);
-            eventStore = new EventRepository(databaseManager, settings);
-            syncStateStore = new SyncStateRepository(databaseManager, settings);
 
             scheduler.runAsync(() -> {
                 try {
-                    databaseManager.init();
+                    if (!databaseManager.init()) {
+                        handleDatabaseStartupFailure(settings);
+                        return;
+                    }
                     SchemaInitializer schemaInitializer = new SchemaInitializer(databaseManager, settings);
-                    schemaInitializer.createTables();
-                    enableSync(settings);
+                    if (!schemaInitializer.createTables()) {
+                        handleDatabaseStartupFailure(settings);
+                        return;
+                    }
+                    playerStore = new PlayerRepository(databaseManager, settings);
+                    banStore = new BanRepository(databaseManager, settings);
+                    eventStore = new EventRepository(databaseManager, settings);
+                    syncStateStore = new SyncStateRepository(databaseManager, settings);
+                    scheduler.runGlobal(() -> enableComponents(settings, "database"));
                     LoggerUtil.info("Database initialized and sync service started");
                 } catch (Exception e) {
                     LoggerUtil.error("Failed to initialize database", e);
-                    if (!settings.isFailOpenOnDatabaseError()) {
-                        LoggerUtil.error("Fail-close mode: players will be denied login until database is available");
-                    }
+                    handleDatabaseStartupFailure(settings);
                 }
             });
         } else {
-            playerStore = new YamlPlayerStore(getDataFolder());
-            banStore = new YamlBanStore(getDataFolder());
-            eventStore = new YamlEventStore(getDataFolder());
-            syncStateStore = new YamlSyncStateStore(getDataFolder());
-            enableSync(settings);
-            LoggerUtil.info("YAML storage initialized");
+            setupYamlStorage();
+            enableComponents(settings, "yaml");
         }
 
-        placeholderCache = new PlaceholderCache(settings.getPapiCacheSeconds());
+        LoggerUtil.info("Getout enabled successfully");
+    }
+
+    private void handleDatabaseStartupFailure(Settings settings) {
+        if (settings.isDatabaseFallbackYamlEnabled()) {
+            LoggerUtil.warn("Database unavailable, falling back to YAML storage for this runtime");
+            scheduler.runAsync(() -> {
+                settings.setStorageType("yaml");
+                setupYamlStorage();
+                scheduler.runGlobal(() -> enableComponents(settings, "yaml-fallback"));
+            });
+            return;
+        }
+
+        LoggerUtil.error("Database unavailable and storage.database-failure-strategy=fail-fast; disabling Getout");
+        scheduler.runGlobal(() -> Bukkit.getPluginManager().disablePlugin(this));
+    }
+
+    private void setupYamlStorage() {
+        playerStore = new YamlPlayerStore(getDataFolder());
+        banStore = new YamlBanStore(getDataFolder());
+        eventStore = new YamlEventStore(getDataFolder());
+        syncStateStore = new YamlSyncStateStore(getDataFolder());
+        LoggerUtil.info("YAML storage initialized");
+    }
+
+    private void enableComponents(Settings settings, String storageMode) {
+        if (componentsEnabled) return;
+        componentsEnabled = true;
+        runtimeStorageType = storageMode;
+
+        eventProcessor = new EventProcessor(eventStore, banStore, syncStateStore, settings, scheduler, messageService, adminNotifier);
+        syncService = new SyncService(databaseManager, banStore, eventStore, settings, scheduler, eventProcessor);
+        syncService.start();
 
         Bukkit.getPluginManager().registerEvents(new LoginListener(databaseManager, banStore, settings, messageService), this);
         Bukkit.getPluginManager().registerEvents(new JoinListener(playerStore, settings, scheduler), this);
 
         registerCommands(settings);
         registerPAPI();
-
-        LoggerUtil.info("Getout enabled successfully");
-    }
-
-    private void enableSync(Settings settings) {
-        eventProcessor = new EventProcessor(eventStore, banStore, syncStateStore, settings, scheduler);
-        syncService = new SyncService(databaseManager, banStore, eventStore, settings, scheduler, eventProcessor);
-        syncService.start();
+        LoggerUtil.info("Getout runtime components enabled (storage=" + storageMode + ")");
     }
 
     @Override
@@ -127,6 +160,12 @@ public class GetoutPlugin extends JavaPlugin {
     public void reload() {
         configService.reload();
         Settings settings = configService.getSettings();
+        if (runtimeStorageType.startsWith("yaml")
+                && settings.isDatabaseEnabled()
+                && (databaseManager == null || !databaseManager.isInitialized())) {
+            settings.setStorageType("yaml");
+            LoggerUtil.warn("Reload kept runtime YAML storage because database is not initialized");
+        }
 
         LoggerUtil.init(getLogger(), settings.isDebug());
         messageService.reload(settings.getLang());
@@ -139,10 +178,10 @@ public class GetoutPlugin extends JavaPlugin {
     }
 
     private void registerCommands(Settings settings) {
-        BanCommand banCommand = new BanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler);
-        TempBanCommand tempBanCommand = new TempBanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler);
-        KickCommand kickCommand = new KickCommand(playerStore, eventStore, messageService, settings, scheduler);
-        GetoutCommand getoutCommand = new GetoutCommand(this, settings, messageService, scheduler);
+        BanCommand banCommand = new BanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        TempBanCommand tempBanCommand = new TempBanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        KickCommand kickCommand = new KickCommand(playerStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        GetoutCommand getoutCommand = new GetoutCommand(this, settings, messageService, scheduler, databaseManager);
 
         registerCommandSafe("ban", banCommand, banCommand);
         registerCommandSafe("tempban", tempBanCommand, tempBanCommand);
@@ -172,5 +211,9 @@ public class GetoutPlugin extends JavaPlugin {
         } else {
             LoggerUtil.info("PlaceholderAPI not found, skipping expansion registration");
         }
+    }
+
+    public DatabaseManager getDatabaseManager() {
+        return databaseManager;
     }
 }

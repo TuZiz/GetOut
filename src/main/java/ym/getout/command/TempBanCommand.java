@@ -1,5 +1,6 @@
 package ym.getout.command;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
 import ym.getout.lang.MessageService;
 import ym.getout.model.PlayerIndex;
+import ym.getout.notify.AdminNotifier;
 import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
@@ -29,16 +31,19 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
     private final MessageService messages;
     private final Settings settings;
     private final SchedulerAdapter scheduler;
+    private final AdminNotifier adminNotifier;
 
     public TempBanCommand(PlayerStore playerRepository, BanStore banRepository,
                           EventStore eventRepository, MessageService messages,
-                          Settings settings, SchedulerAdapter scheduler) {
+                          Settings settings, SchedulerAdapter scheduler,
+                          AdminNotifier adminNotifier) {
         this.playerRepository = playerRepository;
         this.banRepository = banRepository;
         this.eventRepository = eventRepository;
         this.messages = messages;
         this.settings = settings;
         this.scheduler = scheduler;
+        this.adminNotifier = adminNotifier;
     }
 
     @Override
@@ -97,6 +102,8 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
                     kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, duration, expiresAt);
                 }
 
+                adminNotifier.notifyPunishment("TEMPBAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "tempban.success",
                         Map.of("player", target.getName(), "duration", duration, "reason", reason)));
 
@@ -121,8 +128,8 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
                         "left", TimeFormatter.formatRemaining(expiresAt),
                         "expire", fmt.format(new Date(expiresAt))
                 );
-                List<String> lines = messages.getFormattedList("tempban.kick-message", placeholders);
-                player.kickPlayer(String.join("\n", lines));
+                Component kickMessage = messages.getComponentList("tempban.kick-message", placeholders);
+                player.kick(kickMessage);
             }
         });
     }

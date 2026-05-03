@@ -15,6 +15,9 @@ permissions:
   getout.command.kick:
     description: Allows kicking players
     default: op
+  getout.notify:
+    description: Receives Getout punishment notifications
+    default: op
   getout.admin:
     description: Full access to Getout commands
     default: op
@@ -22,6 +25,7 @@ permissions:
       getout.command.ban: true
       getout.command.tempban: true
       getout.command.kick: true
+      getout.notify: true
 
 commands:
   ban:
@@ -38,5 +42,5 @@ commands:
     permission: getout.command.kick
   getout:
     description: Getout admin commands
-    usage: /getout <reload|info>
+    usage: /getout <reload|info|migrate>
     permission: getout.admin

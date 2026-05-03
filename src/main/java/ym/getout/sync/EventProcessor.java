@@ -1,18 +1,26 @@
 package ym.getout.sync;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
+import ym.getout.lang.MessageService;
+import ym.getout.notify.AdminNotifier;
 import ym.getout.model.SyncEvent;
 import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
 import ym.getout.storage.SyncStateStore;
 import ym.getout.util.LoggerUtil;
+import ym.getout.util.TimeFormatter;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Date;
 
 public class EventProcessor {
 
@@ -21,15 +29,20 @@ public class EventProcessor {
     private final SyncStateStore syncStateRepository;
     private final Settings settings;
     private final SchedulerAdapter scheduler;
+    private final MessageService messages;
+    private final AdminNotifier adminNotifier;
     private final AtomicLong lastProcessedId = new AtomicLong(0);
 
     public EventProcessor(EventStore eventRepository, BanStore banRepository,
-                          SyncStateStore syncStateRepository, Settings settings, SchedulerAdapter scheduler) {
+                          SyncStateStore syncStateRepository, Settings settings, SchedulerAdapter scheduler,
+                          MessageService messages, AdminNotifier adminNotifier) {
         this.eventRepository = eventRepository;
         this.banRepository = banRepository;
         this.syncStateRepository = syncStateRepository;
         this.settings = settings;
         this.scheduler = scheduler;
+        this.messages = messages;
+        this.adminNotifier = adminNotifier;
         this.lastProcessedId.set(syncStateRepository.getLastProcessedEventId(settings.getServerId()));
     }
 
@@ -65,28 +78,66 @@ public class EventProcessor {
     }
 
     private void handleBanEvent(SyncEvent event) {
-        if (!settings.isSyncKickOnlineAfterBan()) return;
-        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName());
+        if (settings.isSyncKickOnlineAfterBan()) {
+            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "BAN", null);
+        }
+        adminNotifier.notifyPunishment("BAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void handleTempBanEvent(SyncEvent event) {
-        if (!settings.isSyncKickOnlineAfterBan()) return;
-        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName());
+        Long expiresAt = parseExpiresAt(event.getPayload());
+        if (settings.isSyncKickOnlineAfterBan()) {
+            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "TEMPBAN", expiresAt);
+        }
+        adminNotifier.notifyPunishment("TEMPBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void handleKickEvent(SyncEvent event) {
-        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName());
+        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null);
+        adminNotifier.notifyPunishment("KICK", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
-    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator) {
+    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt) {
         scheduler.runGlobal(() -> {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
-                String kickMsg = "你已被封禁/踢出\n原因: " + (reason != null ? reason : "无");
-                player.kickPlayer(kickMsg);
+                Component kickMessage = buildKickMessage(eventType, name, reason, operator, expiresAt);
+                player.kick(kickMessage);
                 LoggerUtil.info("Kicked synced player: " + name);
             }
         });
+    }
+
+    private Component buildKickMessage(String eventType, String name, String reason, String operator, Long expiresAt) {
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("player", name != null ? name : "");
+        placeholders.put("reason", reason != null ? reason : "");
+        placeholders.put("operator", operator != null ? operator : "Console");
+        placeholders.put("time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date()));
+        placeholders.put("left", expiresAt != null ? TimeFormatter.formatRemaining(expiresAt) : messages.getString("placeholder.never", "永久"));
+        placeholders.put("expire", expiresAt != null ? new SimpleDateFormat(settings.getTimeFormat()).format(new Date(expiresAt)) : messages.getString("placeholder.never", "永久"));
+
+        String path = switch (eventType.toUpperCase()) {
+            case "TEMPBAN" -> "tempban.kick-message";
+            case "KICK" -> "kick.message";
+            default -> "ban.kick-message";
+        };
+        return messages.getComponentList(path, placeholders);
+    }
+
+    private Long parseExpiresAt(String payload) {
+        if (payload == null || payload.isBlank()) return null;
+        for (String part : payload.split("&")) {
+            String[] kv = part.split("=", 2);
+            if (kv.length == 2 && "expires_at".equalsIgnoreCase(kv[0])) {
+                try {
+                    return Long.parseLong(kv[1]);
+                } catch (NumberFormatException ignored) {
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 
     public void setLastProcessedId(long id) {

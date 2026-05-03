@@ -27,7 +27,7 @@ public class SchemaInitializer {
      * 创建所有必要的数据库表和索引。
      * Never call this method from the server main thread.
      */
-    public void createTables() {
+    public boolean createTables() {
         SqlDialect dialect = db.getDialect();
         String prefix = settings.getTablePrefix();
 
@@ -56,8 +56,10 @@ public class SchemaInitializer {
             LoggerUtil.debug("Table " + prefix + "sync_state ensured");
 
             LoggerUtil.info("Database schema initialized");
+            return true;
         } catch (SQLException e) {
             LoggerUtil.error("Failed to create database tables", e);
+            return false;
         }
     }
 

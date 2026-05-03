@@ -27,7 +27,7 @@ public class DatabaseManager {
      * 异步初始化数据库连接池。
      * Never call this method from the server main thread.
      */
-    public void init() {
+    public boolean init() {
         checkMainThread();
 
         SqlDialect dialect = SqlDialect.fromString(settings.getDbType());
@@ -59,9 +59,11 @@ public class DatabaseManager {
             dataSource = new HikariDataSource(config);
             initialized = true;
             LoggerUtil.info("Database connection pool initialized (" + settings.getDbType() + ")");
+            return true;
         } catch (Exception e) {
             LoggerUtil.error("Failed to initialize database connection pool", e);
             initialized = false;
+            return false;
         }
     }
 

@@ -16,27 +16,14 @@ ban:
   success: "<prefix><#FF0844>永久封禁</#FF0844> <#A0AEC0>| 已永久封禁 <#FF7676><player></#FF7676>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
   default-reason: "违反服务器规则"
   kick-message:
-    - "<gradient:#FF0844:#FFB199><b>你已被本服务器永久封禁</b></gradient>"
-    - ""
-    - "<#A0AEC0>封禁编号 <#CBD5E1>▪</#CBD5E1> <#FEE140>#<ban_id></#FEE140>"
-    - "<#A0AEC0>封禁原因 <#CBD5E1>▪</#CBD5E1> <#FF8787><reason></#FF8787>"
-    - "<#A0AEC0>处理人员 <#CBD5E1>▪</#CBD5E1> <#4FACFE><operator></#4FACFE>"
-    - "<#A0AEC0>封禁时间 <#CBD5E1>▪</#CBD5E1> <#FEE140><time></#FEE140>"
-    - ""
-    - "<#00F2FE>如果你认为这是误封，请通过服务器官方渠道提交申诉。</#00F2FE>"
+    - "<#FF8787>玩家 <player> 被永久封禁，编号 #<ban_id></#FF8787>"
 
 tempban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/tempban <玩家名|UUID> <时长> [封禁原因]</#00E1D9></#A0AEC0>"
   success: "<prefix><#FA709A>临时封禁</#FA709A> <#A0AEC0>| 已临时封禁 <#FF7676><player></#FF7676>，时长：<#00F2FE><duration></#00F2FE>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
   default-reason: "违反服务器规则"
   kick-message:
-    - "<gradient:#FA709A:#FEE140><b>你已被本服务器临时封禁</b></gradient>"
-    - ""
-    - "<#A0AEC0>封禁编号 <#CBD5E1>▪</#CBD5E1> <#FEE140>#<ban_id></#FEE140>"
-    - "<#A0AEC0>封禁原因 <#CBD5E1>▪</#CBD5E1> <#FF8787><reason></#FF8787>"
-    - "<#A0AEC0>剩余时间 <#CBD5E1>▪</#CBD5E1> <#00F2FE><left></#00F2FE>"
-    - "<#A0AEC0>解封时间 <#CBD5E1>▪</#CBD5E1> <#00E1D9><expire></#00E1D9>"
-    - "<#A0AEC0>处理人员 <#CBD5E1>▪</#CBD5E1> <#4FACFE><operator></#4FACFE>"
+    - "<#FEE140>玩家 <player> 被临时封禁，编号 #<ban_id></#FEE140>"
 
 unban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/unban <玩家名|UUID> [解封原因]</#00E1D9></#A0AEC0>"
@@ -56,24 +43,9 @@ kick:
 
 login:
   banned:
-    - "<gradient:#FF0844:#FFB199><b>你已被本服务器永久封禁</b></gradient>"
-    - ""
-    - "<#A0AEC0>封禁编号 <#CBD5E1>▪</#CBD5E1> <#FEE140>#<ban_id></#FEE140>"
-    - "<#A0AEC0>封禁原因 <#CBD5E1>▪</#CBD5E1> <#FF8787><reason></#FF8787>"
-    - "<#A0AEC0>处理人员 <#CBD5E1>▪</#CBD5E1> <#4FACFE><operator></#4FACFE>"
-    - "<#A0AEC0>封禁时间 <#CBD5E1>▪</#CBD5E1> <#FEE140><time></#FEE140>"
-    - ""
-    - "<#00F2FE>如果你认为这是误封，请通过服务器官方渠道提交申诉。</#00F2FE>"
+    - "<#FF8787>玩家 <player> 被永久封禁，编号 #<ban_id></#FF8787>"
   temp-banned:
-    - "<gradient:#FA709A:#FEE140><b>你已被本服务器临时封禁</b></gradient>"
-    - ""
-    - "<#A0AEC0>封禁编号 <#CBD5E1>▪</#CBD5E1> <#FEE140>#<ban_id></#FEE140>"
-    - "<#A0AEC0>封禁原因 <#CBD5E1>▪</#CBD5E1> <#FF8787><reason></#FF8787>"
-    - "<#A0AEC0>剩余时间 <#CBD5E1>▪</#CBD5E1> <#00F2FE><left></#00F2FE>"
-    - "<#A0AEC0>解封时间 <#CBD5E1>▪</#CBD5E1> <#00E1D9><expire></#00E1D9>"
-    - "<#A0AEC0>处理人员 <#CBD5E1>▪</#CBD5E1> <#4FACFE><operator></#4FACFE>"
-    - ""
-    - "<#00F2FE>如果你认为这是误封，请通过服务器官方渠道提交申诉。</#00F2FE>"
+    - "<#FEE140>玩家 <player> 被临时封禁，编号 #<ban_id></#FEE140>"
   database-fail-close:
     - "<gradient:#FF4B4B:#FF7676><b>服务器数据暂时不可用</b></gradient>"
     - "<#A0AEC0>封禁系统暂时无法连接数据库。</#A0AEC0>"

@@ -109,6 +109,7 @@ public class BanCommand implements CommandExecutor, TabCompleter {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
                 Map<String, String> placeholders = Map.of(
+                        "player", name,
                         "ban_id", String.valueOf(banId),
                         "reason", reason,
                         "operator", operator,

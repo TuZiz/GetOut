@@ -122,6 +122,7 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
             if (player != null && player.isOnline()) {
                 SimpleDateFormat fmt = new SimpleDateFormat(settings.getTimeFormat());
                 Map<String, String> placeholders = Map.of(
+                        "player", name,
                         "ban_id", String.valueOf(banId),
                         "reason", reason,
                         "operator", operator,

@@ -59,6 +59,7 @@ public class LoginListener implements Listener {
 
             SimpleDateFormat fmt = new SimpleDateFormat(settings.getTimeFormat());
             Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("player", name);
             placeholders.put("ban_id", String.valueOf(ban.getId()));
             placeholders.put("reason", ban.getReason() != null ? ban.getReason() : "");
             placeholders.put("operator", ban.getOperatorName() != null ? ban.getOperatorName() : "");

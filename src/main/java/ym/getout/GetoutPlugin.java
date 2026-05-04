@@ -95,7 +95,8 @@ public class GetoutPlugin extends JavaPlugin {
                     ipBanStore = new IpBanRepository(databaseManager, settings);
                     eventStore = new EventRepository(databaseManager, settings);
                     syncStateStore = new SyncStateRepository(databaseManager, settings);
-                    scheduler.runGlobal(() -> enableComponents(settings, "database"));
+                    long initialLastProcessedEventId = syncStateStore.getLastProcessedEventId(settings.getServerId());
+                    scheduler.runGlobal(() -> enableComponents(settings, "database", initialLastProcessedEventId));
                     LoggerUtil.info("Database initialized and sync service started");
                 } catch (Exception e) {
                     LoggerUtil.error("Failed to initialize database", e);
@@ -104,7 +105,7 @@ public class GetoutPlugin extends JavaPlugin {
             });
         } else {
             setupYamlStorage();
-            enableComponents(settings, "yaml");
+            enableComponents(settings, "yaml", 0L);
         }
 
         LoggerUtil.info("Getout enabled successfully");
@@ -116,7 +117,7 @@ public class GetoutPlugin extends JavaPlugin {
             scheduler.runAsync(() -> {
                 settings.setStorageType("yaml");
                 setupYamlStorage();
-                scheduler.runGlobal(() -> enableComponents(settings, "yaml-fallback"));
+                scheduler.runGlobal(() -> enableComponents(settings, "yaml-fallback", 0L));
             });
             return;
         }
@@ -134,12 +135,12 @@ public class GetoutPlugin extends JavaPlugin {
         LoggerUtil.info("YAML storage initialized");
     }
 
-    private void enableComponents(Settings settings, String storageMode) {
+    private void enableComponents(Settings settings, String storageMode, long initialLastProcessedEventId) {
         if (componentsEnabled) return;
         componentsEnabled = true;
         runtimeStorageType = storageMode;
 
-        eventProcessor = new EventProcessor(eventStore, banStore, ipBanStore, syncStateStore, settings, scheduler, messageService, adminNotifier);
+        eventProcessor = new EventProcessor(eventStore, banStore, ipBanStore, syncStateStore, settings, scheduler, messageService, adminNotifier, initialLastProcessedEventId);
         syncService = new SyncService(databaseManager, banStore, eventStore, settings, scheduler, eventProcessor);
         syncService.start();
 

@@ -63,7 +63,12 @@ public class Settings {
         debug = config.getBoolean("debug", false);
         failOpenOnDatabaseError = config.getBoolean("fail-open-on-database-error", true);
 
-        storageType = config.getString("storage.type", "yaml").toLowerCase();
+        if (config.isSet("storage.type")) {
+            storageType = config.getString("storage.type", "yaml").toLowerCase();
+        } else {
+            // Backward compatibility for older configs that only had the database block.
+            storageType = config.isConfigurationSection("database") ? "database" : "yaml";
+        }
         databaseFailureStrategy = config.getString("storage.database-failure-strategy", "fail-fast").toLowerCase();
 
         dbType = config.getString("database.type", "mysql");

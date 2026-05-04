@@ -37,7 +37,7 @@ public class EventProcessor {
 
     public EventProcessor(EventStore eventRepository, BanStore banRepository, IpBanStore ipBanRepository,
                           SyncStateStore syncStateRepository, Settings settings, SchedulerAdapter scheduler,
-                          MessageService messages, AdminNotifier adminNotifier) {
+                          MessageService messages, AdminNotifier adminNotifier, long initialLastProcessedId) {
         this.eventRepository = eventRepository;
         this.banRepository = banRepository;
         this.ipBanRepository = ipBanRepository;
@@ -46,7 +46,7 @@ public class EventProcessor {
         this.scheduler = scheduler;
         this.messages = messages;
         this.adminNotifier = adminNotifier;
-        this.lastProcessedId.set(syncStateRepository.getLastProcessedEventId(settings.getServerId()));
+        this.lastProcessedId.set(initialLastProcessedId);
     }
 
     /**

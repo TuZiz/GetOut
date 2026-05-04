@@ -74,7 +74,7 @@ public class GetoutPlugin extends JavaPlugin {
         messageService.init();
 
         placeholderCache = new PlaceholderCache(settings.getPapiCacheSeconds());
-        adminNotifier = new AdminNotifier(settings, messageService);
+        adminNotifier = new AdminNotifier(settings, messageService, scheduler);
 
         if (settings.isDatabaseEnabled()) {
             databaseManager = new DatabaseManager(settings);

@@ -1,5 +1,6 @@
 package ym.getout.command;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,8 +17,10 @@ import ym.getout.storage.IpBanStore;
 import ym.getout.storage.PlayerStore;
 import ym.getout.util.LoggerUtil;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -92,6 +95,9 @@ public class BanIpCommand implements CommandExecutor, TabCompleter {
 
                 eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
                         reason, finalOperatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + ipBanId);
+                if (settings.isSyncKickOnlineAfterBan()) {
+                    kickOnlinePlayer(target.getUuid(), target.getName(), ip, reason, finalOperatorName, ipBanId);
+                }
                 adminNotifier.notifyPunishment("IP_BAN", target.getName(), reason, finalOperatorName, settings.getServerId(), false);
 
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "banip.success",
@@ -103,6 +109,24 @@ public class BanIpCommand implements CommandExecutor, TabCompleter {
         });
 
         return true;
+    }
+
+    private void kickOnlinePlayer(UUID uuid, String name, String ip, String reason, String operator, long ipBanId) {
+        scheduler.runGlobal(() -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                Map<String, String> placeholders = Map.of(
+                        "player", name,
+                        "ip", ip,
+                        "ip_ban_id", String.valueOf(ipBanId),
+                        "reason", reason,
+                        "operator", operator,
+                        "time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date())
+                );
+                Component kickMessage = messages.getComponentList("banip.kick-message", placeholders);
+                player.kick(kickMessage);
+            }
+        });
     }
 
     @Override

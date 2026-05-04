@@ -101,11 +101,16 @@ public class EventProcessor {
     }
 
     private void handleIpBanEvent(SyncEvent event) {
+        Long ipBanId = parseLongPayload(event.getPayload(), "ip_ban_id");
+        String ip = parseStringPayload(event.getPayload(), "ip");
+        if (settings.isSyncKickOnlineAfterBan()) {
+            kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "IP_BAN", null, ipBanId, ip);
+        }
         adminNotifier.notifyPunishment("IP_BAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void handleKickEvent(SyncEvent event) {
-        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null, null);
+        kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null, null, null);
         adminNotifier.notifyPunishment("KICK", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
@@ -129,20 +134,26 @@ public class EventProcessor {
     }
 
     private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt, Long banId) {
+        kickOnlinePlayer(uuid, name, reason, operator, eventType, expiresAt, banId, null);
+    }
+
+    private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt, Long banId, String ip) {
         scheduler.runGlobal(() -> {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
-                Component kickMessage = buildKickMessage(eventType, name, reason, operator, expiresAt, banId);
+                Component kickMessage = buildKickMessage(eventType, name, reason, operator, expiresAt, banId, ip);
                 player.kick(kickMessage);
                 LoggerUtil.info("Kicked synced player: " + name);
             }
         });
     }
 
-    private Component buildKickMessage(String eventType, String name, String reason, String operator, Long expiresAt, Long banId) {
+    private Component buildKickMessage(String eventType, String name, String reason, String operator, Long expiresAt, Long banId, String ip) {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("player", name != null ? name : "");
+        placeholders.put("ip", ip != null ? ip : "");
         placeholders.put("ban_id", banId != null ? String.valueOf(banId) : "未知");
+        placeholders.put("ip_ban_id", banId != null ? String.valueOf(banId) : "未知");
         placeholders.put("reason", reason != null ? reason : "");
         placeholders.put("operator", operator != null ? operator : "Console");
         placeholders.put("time", new SimpleDateFormat(settings.getTimeFormat()).format(new Date()));
@@ -151,6 +162,7 @@ public class EventProcessor {
 
         String path = switch (eventType.toUpperCase()) {
             case "TEMPBAN" -> "tempban.kick-message";
+            case "IP_BAN" -> "banip.kick-message";
             case "KICK" -> "kick.message";
             default -> "ban.kick-message";
         };

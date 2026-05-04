@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
 import ym.getout.lang.MessageService;
+import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.util.TextUtil;
 
 import java.util.Map;
@@ -13,10 +14,12 @@ public class AdminNotifier {
 
     private final Settings settings;
     private final MessageService messages;
+    private final SchedulerAdapter scheduler;
 
-    public AdminNotifier(Settings settings, MessageService messages) {
+    public AdminNotifier(Settings settings, MessageService messages, SchedulerAdapter scheduler) {
         this.settings = settings;
         this.messages = messages;
+        this.scheduler = scheduler;
     }
 
     public void notifyPunishment(String eventType, String targetName, String reason,
@@ -43,15 +46,17 @@ public class AdminNotifier {
         );
         String legacy = TextUtil.toLegacy(messages.getComponent(path, placeholders));
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission(settings.getAdminNotifyPermission())) {
-                player.sendMessage(legacy);
+        scheduler.runGlobal(() -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player.hasPermission(settings.getAdminNotifyPermission())) {
+                    player.sendMessage(legacy);
+                }
             }
-        }
 
-        if (settings.isAdminNotifyConsole()) {
-            CommandSender console = Bukkit.getConsoleSender();
-            console.sendMessage(legacy);
-        }
+            if (settings.isAdminNotifyConsole()) {
+                CommandSender console = Bukkit.getConsoleSender();
+                console.sendMessage(legacy);
+            }
+        });
     }
 }

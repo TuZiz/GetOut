@@ -59,6 +59,14 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
         String timeStr = args[1];
         String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length))
                 : messages.getString("tempban.default-reason", "违反服务器规则");
+        UUID operatorUuid = null;
+        String operatorName = "Console";
+        if (sender instanceof Player player) {
+            operatorUuid = player.getUniqueId();
+            operatorName = player.getName();
+        }
+        UUID finalOperatorUuid = operatorUuid;
+        String finalOperatorName = operatorName;
 
         long durationMs = TimeParser.parse(timeStr);
         if (durationMs <= 0) {
@@ -78,16 +86,9 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                UUID operatorUuid = null;
-                String operatorName = "Console";
-                if (sender instanceof Player player) {
-                    operatorUuid = player.getUniqueId();
-                    operatorName = player.getName();
-                }
-
                 long banId = banRepository.createBan(
                         target.getUuid(), target.getName(), reason,
-                        operatorUuid, operatorName, expiresAt, settings.getServerId());
+                        finalOperatorUuid, finalOperatorName, expiresAt, settings.getServerId());
 
                 if (banId < 0) {
                     scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));
@@ -96,13 +97,13 @@ public class TempBanCommand implements CommandExecutor, TabCompleter {
 
                 String payload = "expires_at=" + expiresAt + "&ban_id=" + banId;
                 eventRepository.insertEvent("TEMPBAN", target.getUuid(), target.getName(),
-                        reason, operatorName, settings.getServerId(), payload);
+                        reason, finalOperatorName, settings.getServerId(), payload);
 
                 if (settings.isSyncKickOnlineAfterBan()) {
-                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, duration, expiresAt, banId);
+                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, finalOperatorName, duration, expiresAt, banId);
                 }
 
-                adminNotifier.notifyPunishment("TEMPBAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+                adminNotifier.notifyPunishment("TEMPBAN", target.getName(), reason, finalOperatorName, settings.getServerId(), false);
 
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "tempban.success",
                         Map.of("player", target.getName(), "duration", duration, "reason", reason)));

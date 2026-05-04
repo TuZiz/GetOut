@@ -89,9 +89,10 @@ public class GetoutCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§6[Getout] §e命令列表:");
         sender.sendMessage("§e/ban <玩家名|UUID> [原因] §7- 永久封禁玩家");
-        sender.sendMessage("§e/banip <玩家名|UUID> [原因] §7- 封禁玩家最后登录 IP");
+        sender.sendMessage("§e/banip <玩家名|UUID> [原因] §7- 封禁玩家当前或最后记录的 IP");
+        sender.sendMessage("§e/unbanip <玩家名|UUID|IP> [原因] §7- 解除 IP 封禁");
         sender.sendMessage("§e/tempban <玩家名|UUID> <时间> [原因] §7- 临时封禁玩家");
-        sender.sendMessage("§e/unban <玩家名|UUID> [原因] §7- 解除封禁");
+        sender.sendMessage("§e/unban <玩家名|UUID> [原因] §7- 解除账号封禁");
         sender.sendMessage("§e/kick <玩家名|UUID> [原因] §7- 踢出玩家");
         sender.sendMessage("§e/getout reload §7- 重载配置");
         sender.sendMessage("§e/getout info §7- 查看插件信息");

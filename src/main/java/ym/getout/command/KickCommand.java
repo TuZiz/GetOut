@@ -56,6 +56,7 @@ public class KickCommand implements CommandExecutor, TabCompleter {
         String targetName = args[0];
         String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
                 : messages.getString("kick.default-reason", "你已被服务器踢出");
+        String operatorName = sender instanceof Player player ? player.getName() : "Console";
 
         Player targetPlayer = Bukkit.getPlayerExact(targetName);
         if (targetPlayer == null) {
@@ -65,56 +66,58 @@ public class KickCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        UUID resolvedUuid = targetPlayer != null ? targetPlayer.getUniqueId() : null;
-        String resolvedName = targetPlayer != null ? targetPlayer.getName() : targetName;
+        if (targetPlayer != null && targetPlayer.isOnline()) {
+            UUID targetUuid = targetPlayer.getUniqueId();
+            String targetDisplayName = targetPlayer.getName();
 
-        if (targetPlayer == null || !targetPlayer.isOnline()) {
-            if (!settings.isKickCrossServer()) {
-                CommandUtil.sendMessage(sender, messages, "general.target-offline",
-                        Map.of("player", targetName));
-                return true;
-            }
+            scheduler.runAsync(() -> {
+                try {
+                    eventRepository.insertEvent("KICK", targetUuid, targetDisplayName,
+                            reason, operatorName, settings.getServerId(), "");
+                } catch (Exception e) {
+                    LoggerUtil.error("Failed to write kick sync event", e);
+                }
+            });
 
-            PlayerIndex index = playerRepository.findByNameOrUuid(targetName);
-            if (index == null) {
-                CommandUtil.sendMessage(sender, messages, "general.player-not-found",
-                        Map.of("player", targetName));
-                return true;
-            }
-            resolvedUuid = index.getUuid();
-            resolvedName = index.getName();
+            Map<String, String> placeholders = Map.of(
+                    "reason", reason,
+                    "operator", operatorName
+            );
+            Component kickMessage = messages.getComponentList("kick.message", placeholders);
+            targetPlayer.kick(kickMessage);
+
+            adminNotifier.notifyPunishment("KICK", targetDisplayName, reason, operatorName, settings.getServerId(), false);
+            CommandUtil.sendMessage(sender, messages, "kick.success",
+                    Map.of("player", targetDisplayName, "reason", reason));
+            return true;
         }
 
-        final UUID targetUuid = resolvedUuid;
-        final String targetDisplayName = resolvedName;
-        final String operatorName = sender instanceof Player player ? player.getName() : "Console";
+        if (!settings.isKickCrossServer()) {
+            CommandUtil.sendMessage(sender, messages, "general.target-offline",
+                    Map.of("player", targetName));
+            return true;
+        }
 
         scheduler.runAsync(() -> {
             try {
-                eventRepository.insertEvent("KICK", targetUuid, targetDisplayName,
+                PlayerIndex index = playerRepository.findByNameOrUuid(targetName);
+                if (index == null) {
+                    scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.player-not-found",
+                            Map.of("player", targetName)));
+                    return;
+                }
+
+                eventRepository.insertEvent("KICK", index.getUuid(), index.getName(),
                         reason, operatorName, settings.getServerId(), "");
+                adminNotifier.notifyPunishment("KICK", index.getName(), reason, operatorName, settings.getServerId(), false);
+
+                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "kick.success",
+                        Map.of("player", index.getName(), "reason", reason)));
             } catch (Exception e) {
-                LoggerUtil.error("Failed to write kick sync event", e);
+                LoggerUtil.error("Failed to execute cross-server kick", e);
+                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));
             }
         });
-
-        Map<String, String> placeholders = Map.of(
-                "reason", reason,
-                "operator", operatorName
-        );
-        Component kickMessage = messages.getComponentList("kick.message", placeholders);
-
-        scheduler.runGlobal(() -> {
-            Player current = Bukkit.getPlayer(targetUuid);
-            if (current != null && current.isOnline()) {
-                current.kick(kickMessage);
-            }
-        });
-
-        adminNotifier.notifyPunishment("KICK", targetDisplayName, reason, operatorName, settings.getServerId(), false);
-
-        CommandUtil.sendMessage(sender, messages, "kick.success",
-                Map.of("player", targetDisplayName, "reason", reason));
 
         return true;
     }

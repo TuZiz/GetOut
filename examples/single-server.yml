@@ -1,0 +1,51 @@
+# 单服示例。
+# 适合本地服、小型服或不需要跨服同步的环境。
+
+server-id: "survival"
+debug: false
+fail-open-on-database-error: false
+
+storage:
+  type: yaml
+  database-failure-strategy: fail-fast
+
+ban:
+  auto-ip-ban: false
+
+database:
+  type: sqlite
+  database: getout
+  table-prefix: "getout_"
+  pool:
+    maximum-pool-size: 5
+    minimum-idle: 1
+    connection-timeout-ms: 30000
+    max-lifetime-ms: 1800000
+
+sync:
+  poll-interval-ticks: 20
+  event-retention-days: 7
+  kick-online-after-ban: true
+  process-own-events: false
+
+kick:
+  cross-server: false
+
+cleanup:
+  expired-ban-interval-ticks: 6000
+
+admin-notify:
+  enabled: true
+  permission: getout.notify
+  console: true
+
+cache:
+  papi-cache-seconds: 30
+  player-index-cache-seconds: 300
+
+time:
+  zone-id: "Asia/Shanghai"
+  format: "yyyy-MM-dd HH:mm:ss"
+
+messages:
+  lang: zh_cn

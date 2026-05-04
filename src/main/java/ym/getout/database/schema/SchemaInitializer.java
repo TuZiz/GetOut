@@ -34,7 +34,7 @@ public class SchemaInitializer {
         try (Connection conn = db.getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(buildPlayersTable(dialect, prefix));
-            ensureColumn(stmt, prefix + "players", "last_ip", "VARCHAR(64) DEFAULT ''");
+            ensureColumn(conn, stmt, prefix + "players", "last_ip", "VARCHAR(64) DEFAULT ''");
             LoggerUtil.debug("Table " + prefix + "players ensured");
 
             if (dialect == SqlDialect.SQLITE) {
@@ -42,7 +42,7 @@ public class SchemaInitializer {
             } else {
                 stmt.execute(buildBansTable(dialect, prefix));
             }
-            ensureIndex(stmt, "idx_bans_uuid_active", prefix + "bans", "(uuid, active)");
+            ensureIndex(conn, stmt, prefix + "idx_bans_uuid_active", prefix + "bans", "(uuid, active)");
             LoggerUtil.debug("Table " + prefix + "bans ensured");
 
             if (dialect == SqlDialect.SQLITE) {
@@ -50,7 +50,7 @@ public class SchemaInitializer {
             } else {
                 stmt.execute(buildIpBansTable(dialect, prefix));
             }
-            ensureIndex(stmt, "idx_ip_bans_ip_active", prefix + "ip_bans", "(ip, active)");
+            ensureIndex(conn, stmt, prefix + "idx_ip_bans_ip_active", prefix + "ip_bans", "(ip, active)");
             LoggerUtil.debug("Table " + prefix + "ip_bans ensured");
 
             if (dialect == SqlDialect.SQLITE) {
@@ -181,19 +181,45 @@ public class SchemaInitializer {
                 ")";
     }
 
-    private void ensureColumn(Statement stmt, String table, String column, String definition) {
+    private void ensureColumn(Connection conn, Statement stmt, String table, String column, String definition) throws SQLException {
+        if (columnExists(conn, table, column)) {
+            return;
+        }
         try {
             stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
-        } catch (SQLException ignored) {
-            // Column already exists on existing installations.
+        } catch (SQLException e) {
+            LoggerUtil.error("Failed to ensure column " + column + " on " + table, e);
+            throw e;
         }
     }
 
-    private void ensureIndex(Statement stmt, String indexName, String table, String columns) {
+    private void ensureIndex(Connection conn, Statement stmt, String indexName, String table, String columns) throws SQLException {
+        if (indexExists(conn, table, indexName)) {
+            return;
+        }
         try {
             stmt.execute("CREATE INDEX " + indexName + " ON " + table + " " + columns);
-        } catch (SQLException ignored) {
-            // Index already exists on existing installations.
+        } catch (SQLException e) {
+            LoggerUtil.error("Failed to ensure index " + indexName + " on " + table, e);
+            throw e;
         }
+    }
+
+    private boolean columnExists(Connection conn, String table, String column) throws SQLException {
+        try (var rs = conn.getMetaData().getColumns(conn.getCatalog(), null, table, column)) {
+            return rs.next();
+        }
+    }
+
+    private boolean indexExists(Connection conn, String table, String indexName) throws SQLException {
+        try (var rs = conn.getMetaData().getIndexInfo(conn.getCatalog(), null, table, false, false)) {
+            while (rs.next()) {
+                String name = rs.getString("INDEX_NAME");
+                if (name != null && name.equalsIgnoreCase(indexName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

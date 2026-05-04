@@ -90,17 +90,20 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                 eventRepository.insertEvent("BAN", target.getUuid(), target.getName(),
                         reason, finalOperatorName, settings.getServerId(), "ban_id=" + banId);
 
-                String ip = CommandUtil.firstNonBlank(onlineIp, target.getLastIp());
+                String ip = "";
                 String ipWarningPath = null;
-                if (ip.isBlank()) {
-                    ipWarningPath = "ban.ip-missing";
-                } else {
-                    long ipBanId = ipBanRepository.createIpBan(ip, reason, finalOperatorUuid, finalOperatorName, settings.getServerId());
-                    if (ipBanId > 0) {
-                        eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
-                                reason, finalOperatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + ipBanId);
+                if (settings.isBanAutoIpBan()) {
+                    ip = CommandUtil.firstNonBlank(onlineIp, target.getLastIp());
+                    if (ip.isBlank()) {
+                        ipWarningPath = "ban.ip-missing";
                     } else {
-                        ipWarningPath = "ban.ip-failed";
+                        long ipBanId = ipBanRepository.createIpBan(ip, reason, finalOperatorUuid, finalOperatorName, settings.getServerId());
+                        if (ipBanId > 0) {
+                            eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
+                                    reason, finalOperatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + ipBanId);
+                        } else {
+                            ipWarningPath = "ban.ip-failed";
+                        }
                     }
                 }
 

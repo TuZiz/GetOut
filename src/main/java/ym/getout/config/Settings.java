@@ -1,19 +1,24 @@
 package ym.getout.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.File;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class Settings {
 
+    private static final Pattern TABLE_PREFIX_PATTERN = Pattern.compile("^[A-Za-z][A-Za-z0-9_]{0,31}$");
+
     private String serverId = "server-1";
     private boolean debug = false;
-    private boolean failOpenOnDatabaseError = true;
+    private boolean failOpenOnDatabaseError = false;
 
     // Storage
     private String storageType = "yaml";
     private String databaseFailureStrategy = "fail-fast";
+
+    // Ban
+    private boolean banAutoIpBan = false;
 
     // Database
     private String dbType = "mysql";
@@ -61,15 +66,16 @@ public class Settings {
     public void load(FileConfiguration config) {
         serverId = config.getString("server-id", "server-1");
         debug = config.getBoolean("debug", false);
-        failOpenOnDatabaseError = config.getBoolean("fail-open-on-database-error", true);
+        failOpenOnDatabaseError = config.getBoolean("fail-open-on-database-error", false);
 
         if (config.isSet("storage.type")) {
-            storageType = config.getString("storage.type", "yaml").toLowerCase();
+            storageType = config.getString("storage.type", "yaml").toLowerCase(Locale.ROOT);
         } else {
             // Backward compatibility for older configs that only had the database block.
             storageType = config.isConfigurationSection("database") ? "database" : "yaml";
         }
-        databaseFailureStrategy = config.getString("storage.database-failure-strategy", "fail-fast").toLowerCase();
+        databaseFailureStrategy = config.getString("storage.database-failure-strategy", "fail-fast").toLowerCase(Locale.ROOT);
+        banAutoIpBan = config.getBoolean("ban.auto-ip-ban", false);
 
         dbType = config.getString("database.type", "mysql");
         dbHost = config.getString("database.host", "localhost");
@@ -77,7 +83,7 @@ public class Settings {
         dbDatabase = config.getString("database.database", "getout");
         dbUsername = config.getString("database.username", "root");
         dbPassword = config.getString("database.password", "password");
-        tablePrefix = config.getString("database.table-prefix", "getout_");
+        tablePrefix = validateTablePrefix(config.getString("database.table-prefix", "getout_"));
         poolMaxSize = config.getInt("database.pool.maximum-pool-size", 10);
         poolMinIdle = config.getInt("database.pool.minimum-idle", 2);
         poolConnectionTimeoutMs = config.getLong("database.pool.connection-timeout-ms", 30000);
@@ -110,9 +116,10 @@ public class Settings {
     public boolean isFailOpenOnDatabaseError() { return failOpenOnDatabaseError; }
     public String getStorageType() { return storageType; }
     public boolean isDatabaseEnabled() { return "database".equals(storageType); }
-    public void setStorageType(String storageType) { this.storageType = storageType == null ? "yaml" : storageType.toLowerCase(); }
+    public void setStorageType(String storageType) { this.storageType = storageType == null ? "yaml" : storageType.toLowerCase(Locale.ROOT); }
     public String getDatabaseFailureStrategy() { return databaseFailureStrategy; }
     public boolean isDatabaseFallbackYamlEnabled() { return "fallback-yaml".equals(databaseFailureStrategy); }
+    public boolean isBanAutoIpBan() { return banAutoIpBan; }
 
     public String getDbType() { return dbType; }
     public String getDbHost() { return dbHost; }
@@ -149,4 +156,16 @@ public class Settings {
     public String getRedisHost() { return redisHost; }
     public int getRedisPort() { return redisPort; }
     public String getRedisPassword() { return redisPassword; }
+
+    private String validateTablePrefix(String rawPrefix) {
+        String prefix = rawPrefix == null ? "getout_" : rawPrefix.trim();
+        if (prefix.isEmpty()) {
+            throw new IllegalArgumentException("database.table-prefix cannot be empty");
+        }
+        if (!TABLE_PREFIX_PATTERN.matcher(prefix).matches()) {
+            throw new IllegalArgumentException(
+                    "database.table-prefix must start with a letter and contain only letters, digits, or underscores: " + prefix);
+        }
+        return prefix;
+    }
 }

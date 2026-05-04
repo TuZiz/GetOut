@@ -1,30 +1,39 @@
-# Getout 配置文件
+# Getout 主配置文件。
 
-# 本机服务唯一标识。启用数据库存储后，所有子服必须不同。
+# 当前服务器唯一标识。
+# 启用共享数据库后，每台子服都必须不同。
 server-id: "server-1"
 
 # 是否输出调试日志。
 debug: false
 
 # 数据库不可用时是否放行登录。
-# true = 放行登录
-# false = 拒绝登录
-fail-open-on-database-error: true
+# true = 放行登录。
+# false = 拒绝登录。
+fail-open-on-database-error: false
 
-# 存储模式。
-# yaml = 本地 YAML 存储
-# database = 共享数据库存储，支持跨服同步
+# 存储模式配置。
 storage:
-  # 存储类型开关，只需要改这一项就能切换 YAML 和数据库。
+  # 存储类型。
+  # yaml = 本地 YAML 存储。
+  # database = 共享数据库存储，支持跨服同步。
   type: yaml
-  # 数据库启动失败时的策略。
-  # fail-fast = 直接禁用插件
-  # fallback-yaml = 自动回退到本地 YAML
+  # 数据库启动失败后的处理策略。
+  # fail-fast = 直接停用插件。
+  # fallback-yaml = 自动退回本地 YAML。
   database-failure-strategy: fail-fast
 
-# 数据库配置，仅在 storage.type = database 时使用。
+# /ban 行为配置。
+ban:
+  # /ban 是否顺带自动封禁玩家 IP。
+  # 默认 false，需要时请显式改成 true。
+  auto-ip-ban: false
+
+# 数据库配置。
+# 仅在 storage.type = database 时生效。
 database:
-  # 数据库类型：mysql / mariadb / postgresql / sqlite
+  # 数据库类型。
+  # 支持 mysql / mariadb / postgresql / sqlite。
   type: mysql
   # 数据库主机地址。
   host: localhost
@@ -37,8 +46,9 @@ database:
   # 数据库密码。
   password: password
   # 表名前缀。
+  # 只允许字母、数字、下划线，且必须以字母开头。
   table-prefix: "getout_"
-  # 连接池设置。
+  # 连接池配置。
   pool:
     # 最大连接数。
     maximum-pool-size: 10
@@ -49,51 +59,51 @@ database:
     # 单个连接最大存活时间，单位毫秒。
     max-lifetime-ms: 1800000
 
-# 同步与清理设置。
+# 同步与清理配置。
 sync:
-  # 同步事件轮询间隔，单位 tick。
+  # 事件轮询间隔，单位 tick。
   poll-interval-ticks: 20
   # 同步事件保留天数。
   event-retention-days: 7
-  # 封禁后是否立即踢出当前在线玩家。
+  # 封禁后是否立刻踢出当前在线玩家。
   kick-online-after-ban: true
   # 是否处理本服自己写出的同步事件。
   process-own-events: false
 
-# 踢出设置。
+# /kick 行为配置。
 kick:
   # 是否允许通过玩家索引跨服踢出目标。
   cross-server: true
 
-# 过期清理设置。
+# 过期数据清理配置。
 cleanup:
   # 临时封禁过期清理间隔，单位 tick。
   expired-ban-interval-ticks: 6000
 
-# 管理员通知设置。
+# 管理通知配置。
 admin-notify:
-  # 是否向带权限的人广播惩戒通知。
+  # 是否广播惩戒通知。
   enabled: true
-  # 通知权限节点。
+  # 接收通知所需权限。
   permission: getout.notify
   # 是否同时输出到控制台。
   console: true
 
-# 缓存设置。
+# 缓存配置。
 cache:
   # PlaceholderAPI 缓存秒数。
   papi-cache-seconds: 30
   # 玩家索引缓存秒数。
   player-index-cache-seconds: 300
 
-# 时间显示设置。
+# 时间显示配置。
 time:
   # 时区。
   zone-id: "Asia/Shanghai"
   # 时间格式。
   format: "yyyy-MM-dd HH:mm:ss"
 
-# 语言设置。
+# 语言配置。
 messages:
-  # 语言文件名。
+  # 默认语言文件名。
   lang: zh_cn

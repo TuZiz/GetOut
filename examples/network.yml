@@ -1,0 +1,55 @@
+# 跨服示例。
+# 所有子服都要指向同一个数据库，且 server-id 不能重复。
+
+server-id: "lobby"
+debug: false
+fail-open-on-database-error: false
+
+storage:
+  type: database
+  database-failure-strategy: fail-fast
+
+ban:
+  auto-ip-ban: false
+
+database:
+  type: mysql
+  host: 127.0.0.1
+  port: 3306
+  database: getout
+  username: root
+  password: change-me
+  table-prefix: "getout_"
+  pool:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    connection-timeout-ms: 30000
+    max-lifetime-ms: 1800000
+
+sync:
+  poll-interval-ticks: 20
+  event-retention-days: 7
+  kick-online-after-ban: true
+  process-own-events: false
+
+kick:
+  cross-server: true
+
+cleanup:
+  expired-ban-interval-ticks: 6000
+
+admin-notify:
+  enabled: true
+  permission: getout.notify
+  console: true
+
+cache:
+  papi-cache-seconds: 30
+  player-index-cache-seconds: 300
+
+time:
+  zone-id: "Asia/Shanghai"
+  format: "yyyy-MM-dd HH:mm:ss"
+
+messages:
+  lang: zh_cn

@@ -9,7 +9,9 @@ import ym.getout.config.Settings;
 import ym.getout.database.DatabaseManager;
 import ym.getout.lang.MessageService;
 import ym.getout.model.BanRecord;
+import ym.getout.model.IpBanRecord;
 import ym.getout.storage.BanStore;
+import ym.getout.storage.IpBanStore;
 import ym.getout.util.TimeFormatter;
 
 import java.text.SimpleDateFormat;
@@ -22,12 +24,15 @@ public class LoginListener implements Listener {
 
     private final DatabaseManager db;
     private final BanStore banRepository;
+    private final IpBanStore ipBanRepository;
     private final Settings settings;
     private final MessageService messages;
 
-    public LoginListener(DatabaseManager db, BanStore banRepository, Settings settings, MessageService messages) {
+    public LoginListener(DatabaseManager db, BanStore banRepository, IpBanStore ipBanRepository,
+                         Settings settings, MessageService messages) {
         this.db = db;
         this.banRepository = banRepository;
+        this.ipBanRepository = ipBanRepository;
         this.settings = settings;
         this.messages = messages;
     }
@@ -49,6 +54,22 @@ public class LoginListener implements Listener {
         }
 
         try {
+            String ip = event.getAddress() != null ? event.getAddress().getHostAddress() : "";
+            if (!ip.isBlank()) {
+                IpBanRecord ipBan = ipBanRepository.findActiveIpBan(ip);
+                if (ipBan != null) {
+                    Map<String, String> ipPlaceholders = new HashMap<>();
+                    ipPlaceholders.put("player", name);
+                    ipPlaceholders.put("ip", ip);
+                    ipPlaceholders.put("ip_ban_id", String.valueOf(ipBan.getId()));
+                    ipPlaceholders.put("reason", ipBan.getReason() != null ? ipBan.getReason() : "");
+                    ipPlaceholders.put("operator", ipBan.getOperatorName() != null ? ipBan.getOperatorName() : "");
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED,
+                            messages.getComponentList("login.ip-banned", ipPlaceholders));
+                    return;
+                }
+            }
+
             BanRecord ban = banRepository.findActiveBan(uuid);
             if (ban == null) return;
 

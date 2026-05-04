@@ -34,6 +34,7 @@ public class SchemaInitializer {
         try (Connection conn = db.getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(buildPlayersTable(dialect, prefix));
+            ensureColumn(stmt, prefix + "players", "last_ip", "VARCHAR(64) DEFAULT ''");
             LoggerUtil.debug("Table " + prefix + "players ensured");
 
             // Bans table: SQLite doesn't support inline INDEX in CREATE TABLE
@@ -44,6 +45,14 @@ public class SchemaInitializer {
                 stmt.execute(buildBansTable(dialect, prefix));
             }
             LoggerUtil.debug("Table " + prefix + "bans ensured");
+
+            if (dialect == SqlDialect.SQLITE) {
+                stmt.execute(buildIpBansTableSqlite(prefix));
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_ip_bans_ip_active ON " + prefix + "ip_bans (ip, active)");
+            } else {
+                stmt.execute(buildIpBansTable(dialect, prefix));
+            }
+            LoggerUtil.debug("Table " + prefix + "ip_bans ensured");
 
             if (dialect == SqlDialect.SQLITE) {
                 stmt.execute(buildEventsTableSqlite(prefix));
@@ -69,7 +78,38 @@ public class SchemaInitializer {
                 "name VARCHAR(16) NOT NULL, " +
                 "name_lower VARCHAR(16) NOT NULL, " +
                 "last_seen_at " + dialect.longType() + " NOT NULL DEFAULT 0, " +
-                "last_server VARCHAR(64) DEFAULT ''" +
+                "last_server VARCHAR(64) DEFAULT '', " +
+                "last_ip VARCHAR(64) DEFAULT ''" +
+                ")";
+    }
+
+    private String buildIpBansTable(SqlDialect dialect, String prefix) {
+        String idType = dialect.autoIncrement();
+        return "CREATE TABLE IF NOT EXISTS " + prefix + "ip_bans (" +
+                "id " + idType + " PRIMARY KEY, " +
+                "ip VARCHAR(64) NOT NULL, " +
+                "reason " + dialect.textType() + " NOT NULL DEFAULT '', " +
+                "operator_uuid " + dialect.uuidType() + " DEFAULT NULL, " +
+                "operator_name VARCHAR(16) DEFAULT '', " +
+                "created_at " + dialect.longType() + " NOT NULL DEFAULT 0, " +
+                "active BOOLEAN NOT NULL DEFAULT TRUE, " +
+                "server_id VARCHAR(64) DEFAULT '', " +
+                "version " + dialect.longType() + " NOT NULL DEFAULT 1, " +
+                "INDEX idx_ip_bans_ip_active (ip, active)" +
+                ")";
+    }
+
+    private String buildIpBansTableSqlite(String prefix) {
+        return "CREATE TABLE IF NOT EXISTS " + prefix + "ip_bans (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "ip VARCHAR(64) NOT NULL, " +
+                "reason TEXT NOT NULL DEFAULT '', " +
+                "operator_uuid CHAR(36) DEFAULT NULL, " +
+                "operator_name VARCHAR(16) DEFAULT '', " +
+                "created_at BIGINT NOT NULL DEFAULT 0, " +
+                "active BOOLEAN NOT NULL DEFAULT TRUE, " +
+                "server_id VARCHAR(64) DEFAULT '', " +
+                "version BIGINT NOT NULL DEFAULT 1" +
                 ")";
     }
 
@@ -142,5 +182,13 @@ public class SchemaInitializer {
                 "last_processed_event_id " + dialect.longType() + " NOT NULL DEFAULT 0, " +
                 "updated_at " + dialect.longType() + " NOT NULL DEFAULT 0" +
                 ")";
+    }
+
+    private void ensureColumn(Statement stmt, String table, String column, String definition) {
+        try {
+            stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+        } catch (SQLException ignored) {
+            // Column already exists on existing installations.
+        }
     }
 }

@@ -89,6 +89,7 @@ public class GetoutCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§6[Getout] §e命令列表:");
         sender.sendMessage("§e/ban <玩家名|UUID> [原因] §7- 永久封禁玩家");
+        sender.sendMessage("§e/banip <玩家名|UUID> [原因] §7- 封禁玩家最后登录 IP");
         sender.sendMessage("§e/tempban <玩家名|UUID> <时间> [原因] §7- 临时封禁玩家");
         sender.sendMessage("§e/unban <玩家名|UUID> [原因] §7- 解除封禁");
         sender.sendMessage("§e/kick <玩家名|UUID> [原因] §7- 踢出玩家");
@@ -123,6 +124,7 @@ public class GetoutCommand implements CommandExecutor, TabCompleter {
                 scheduler.runGlobal(() -> {
                     sender.sendMessage("§a迁移完成: players=" + result.players()
                             + ", bans=" + result.bans()
+                            + ", ipBans=" + result.ipBans()
                             + ", events=" + result.events()
                             + ", syncStates=" + result.syncStates());
                 });

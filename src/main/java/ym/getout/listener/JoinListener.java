@@ -30,11 +30,16 @@ public class JoinListener implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         String name = event.getPlayer().getName();
         String serverId = settings.getServerId();
+        String lastIp = "";
+        if (event.getPlayer().getAddress() != null && event.getPlayer().getAddress().getAddress() != null) {
+            lastIp = event.getPlayer().getAddress().getAddress().getHostAddress();
+        }
 
         // 异步写入玩家索引
+        String finalLastIp = lastIp;
         scheduler.runAsync(() -> {
             try {
-                playerRepository.upsert(uuid, name, serverId);
+                playerRepository.upsert(uuid, name, serverId, finalLastIp);
             } catch (Exception e) {
                 ym.getout.util.LoggerUtil.error("Failed to update player index for " + name, e);
             }

@@ -14,6 +14,7 @@ import ym.getout.notify.AdminNotifier;
 import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
+import ym.getout.storage.IpBanStore;
 import ym.getout.storage.PlayerStore;
 import ym.getout.util.LoggerUtil;
 import ym.getout.util.TextUtil;
@@ -26,18 +27,20 @@ public class BanCommand implements CommandExecutor, TabCompleter {
 
     private final PlayerStore playerRepository;
     private final BanStore banRepository;
+    private final IpBanStore ipBanRepository;
     private final EventStore eventRepository;
     private final MessageService messages;
     private final Settings settings;
     private final SchedulerAdapter scheduler;
     private final AdminNotifier adminNotifier;
 
-    public BanCommand(PlayerStore playerRepository, BanStore banRepository,
+    public BanCommand(PlayerStore playerRepository, BanStore banRepository, IpBanStore ipBanRepository,
                       EventStore eventRepository, MessageService messages,
                       Settings settings, SchedulerAdapter scheduler,
                       AdminNotifier adminNotifier) {
         this.playerRepository = playerRepository;
         this.banRepository = banRepository;
+        this.ipBanRepository = ipBanRepository;
         this.eventRepository = eventRepository;
         this.messages = messages;
         this.settings = settings;
@@ -85,6 +88,15 @@ public class BanCommand implements CommandExecutor, TabCompleter {
 
                 eventRepository.insertEvent("BAN", target.getUuid(), target.getName(),
                         reason, operatorName, settings.getServerId(), "ban_id=" + banId);
+
+                String lastIp = target.getLastIp();
+                if (lastIp != null && !lastIp.isBlank()) {
+                    long ipBanId = ipBanRepository.createIpBan(lastIp, reason, operatorUuid, operatorName, settings.getServerId());
+                    if (ipBanId > 0) {
+                        eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
+                                reason, operatorName, settings.getServerId(), "ip=" + lastIp + "&ip_ban_id=" + ipBanId);
+                    }
+                }
 
                 if (settings.isSyncKickOnlineAfterBan()) {
                     kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, banId);

@@ -3,6 +3,7 @@ package ym.getout;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import ym.getout.command.BanIpCommand;
 import ym.getout.command.BanCommand;
 import ym.getout.command.GetoutCommand;
 import ym.getout.command.KickCommand;
@@ -13,6 +14,7 @@ import ym.getout.config.Settings;
 import ym.getout.database.DatabaseManager;
 import ym.getout.database.repository.BanRepository;
 import ym.getout.database.repository.EventRepository;
+import ym.getout.database.repository.IpBanRepository;
 import ym.getout.database.repository.PlayerRepository;
 import ym.getout.database.repository.SyncStateRepository;
 import ym.getout.database.schema.SchemaInitializer;
@@ -26,10 +28,12 @@ import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.scheduler.SchedulerProvider;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
+import ym.getout.storage.IpBanStore;
 import ym.getout.storage.PlayerStore;
 import ym.getout.storage.SyncStateStore;
 import ym.getout.storage.yaml.YamlBanStore;
 import ym.getout.storage.yaml.YamlEventStore;
+import ym.getout.storage.yaml.YamlIpBanStore;
 import ym.getout.storage.yaml.YamlPlayerStore;
 import ym.getout.storage.yaml.YamlSyncStateStore;
 import ym.getout.sync.EventProcessor;
@@ -44,6 +48,7 @@ public class GetoutPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
     private PlayerStore playerStore;
     private BanStore banStore;
+    private IpBanStore ipBanStore;
     private EventStore eventStore;
     private SyncStateStore syncStateStore;
     private EventProcessor eventProcessor;
@@ -86,6 +91,7 @@ public class GetoutPlugin extends JavaPlugin {
                     }
                     playerStore = new PlayerRepository(databaseManager, settings);
                     banStore = new BanRepository(databaseManager, settings);
+                    ipBanStore = new IpBanRepository(databaseManager, settings);
                     eventStore = new EventRepository(databaseManager, settings);
                     syncStateStore = new SyncStateRepository(databaseManager, settings);
                     scheduler.runGlobal(() -> enableComponents(settings, "database"));
@@ -121,6 +127,7 @@ public class GetoutPlugin extends JavaPlugin {
     private void setupYamlStorage() {
         playerStore = new YamlPlayerStore(getDataFolder());
         banStore = new YamlBanStore(getDataFolder());
+        ipBanStore = new YamlIpBanStore(getDataFolder());
         eventStore = new YamlEventStore(getDataFolder());
         syncStateStore = new YamlSyncStateStore(getDataFolder());
         LoggerUtil.info("YAML storage initialized");
@@ -131,11 +138,11 @@ public class GetoutPlugin extends JavaPlugin {
         componentsEnabled = true;
         runtimeStorageType = storageMode;
 
-        eventProcessor = new EventProcessor(eventStore, banStore, syncStateStore, settings, scheduler, messageService, adminNotifier);
+        eventProcessor = new EventProcessor(eventStore, banStore, ipBanStore, syncStateStore, settings, scheduler, messageService, adminNotifier);
         syncService = new SyncService(databaseManager, banStore, eventStore, settings, scheduler, eventProcessor);
         syncService.start();
 
-        Bukkit.getPluginManager().registerEvents(new LoginListener(databaseManager, banStore, settings, messageService), this);
+        Bukkit.getPluginManager().registerEvents(new LoginListener(databaseManager, banStore, ipBanStore, settings, messageService), this);
         Bukkit.getPluginManager().registerEvents(new JoinListener(playerStore, settings, scheduler), this);
 
         registerCommands(settings);
@@ -179,15 +186,17 @@ public class GetoutPlugin extends JavaPlugin {
     }
 
     private void registerCommands(Settings settings) {
-        BanCommand banCommand = new BanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        BanCommand banCommand = new BanCommand(playerStore, banStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
         TempBanCommand tempBanCommand = new TempBanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
-        UnbanCommand unbanCommand = new UnbanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        UnbanCommand unbanCommand = new UnbanCommand(playerStore, banStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        BanIpCommand banIpCommand = new BanIpCommand(playerStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
         KickCommand kickCommand = new KickCommand(playerStore, eventStore, messageService, settings, scheduler, adminNotifier);
         GetoutCommand getoutCommand = new GetoutCommand(this, settings, messageService, scheduler, databaseManager);
 
         registerCommandSafe("ban", banCommand, banCommand);
         registerCommandSafe("tempban", tempBanCommand, tempBanCommand);
         registerCommandSafe("unban", unbanCommand, unbanCommand);
+        registerCommandSafe("banip", banIpCommand, banIpCommand);
         registerCommandSafe("kick", kickCommand, kickCommand);
         registerCommandSafe("getout", getoutCommand, getoutCommand);
     }

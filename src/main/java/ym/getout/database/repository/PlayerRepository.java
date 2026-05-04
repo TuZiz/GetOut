@@ -32,19 +32,24 @@ public class PlayerRepository implements PlayerStore {
      * 插入或更新玩家索引。
      */
     public void upsert(UUID uuid, String name, String serverId) {
+        upsert(uuid, name, serverId, "");
+    }
+
+    @Override
+    public void upsert(UUID uuid, String name, String serverId, String lastIp) {
         checkMainThread();
         String sql;
         switch (db.getDialect()) {
-            case POSTGRESQL -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
-                    "VALUES (?, ?, ?, ?, ?) " +
+            case POSTGRESQL -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server, last_ip) " +
+                    "VALUES (?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (uuid) DO UPDATE SET name = EXCLUDED.name, name_lower = EXCLUDED.name_lower, " +
-                    "last_seen_at = EXCLUDED.last_seen_at, last_server = EXCLUDED.last_server";
-            case SQLITE -> sql = "INSERT OR REPLACE INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
-                    "VALUES (?, ?, ?, ?, ?)";
-            default -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server) " +
-                    "VALUES (?, ?, ?, ?, ?) " +
+                    "last_seen_at = EXCLUDED.last_seen_at, last_server = EXCLUDED.last_server, last_ip = EXCLUDED.last_ip";
+            case SQLITE -> sql = "INSERT OR REPLACE INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server, last_ip) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
+            default -> sql = "INSERT INTO " + table() + " (uuid, name, name_lower, last_seen_at, last_server, last_ip) " +
+                    "VALUES (?, ?, ?, ?, ?, ?) " +
                     "ON DUPLICATE KEY UPDATE name = VALUES(name), name_lower = VALUES(name_lower), " +
-                    "last_seen_at = VALUES(last_seen_at), last_server = VALUES(last_server)";
+                    "last_seen_at = VALUES(last_seen_at), last_server = VALUES(last_server), last_ip = VALUES(last_ip)";
         }
 
         try (Connection conn = db.getConnection();
@@ -54,6 +59,7 @@ public class PlayerRepository implements PlayerStore {
             ps.setString(3, name.toLowerCase());
             ps.setLong(4, System.currentTimeMillis());
             ps.setString(5, serverId);
+            ps.setString(6, lastIp != null ? lastIp : "");
             ps.executeUpdate();
         } catch (SQLException e) {
             LoggerUtil.error("Failed to upsert player index for " + name, e);
@@ -65,7 +71,7 @@ public class PlayerRepository implements PlayerStore {
      */
     public PlayerIndex findByUuid(UUID uuid) {
         checkMainThread();
-        String sql = "SELECT uuid, name, name_lower, last_seen_at, last_server FROM " + table() + " WHERE uuid = ?";
+        String sql = "SELECT uuid, name, name_lower, last_seen_at, last_server, last_ip FROM " + table() + " WHERE uuid = ?";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
@@ -76,7 +82,8 @@ public class PlayerRepository implements PlayerStore {
                             rs.getString("name"),
                             rs.getString("name_lower"),
                             rs.getLong("last_seen_at"),
-                            rs.getString("last_server")
+                            rs.getString("last_server"),
+                            rs.getString("last_ip")
                     );
                 }
             }
@@ -91,7 +98,7 @@ public class PlayerRepository implements PlayerStore {
      */
     public PlayerIndex findByName(String name) {
         checkMainThread();
-        String sql = "SELECT uuid, name, name_lower, last_seen_at, last_server FROM " + table() + " WHERE name_lower = ?";
+        String sql = "SELECT uuid, name, name_lower, last_seen_at, last_server, last_ip FROM " + table() + " WHERE name_lower = ?";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name.toLowerCase());
@@ -102,7 +109,8 @@ public class PlayerRepository implements PlayerStore {
                             rs.getString("name"),
                             rs.getString("name_lower"),
                             rs.getLong("last_seen_at"),
-                            rs.getString("last_server")
+                            rs.getString("last_server"),
+                            rs.getString("last_ip")
                     );
                 }
             }

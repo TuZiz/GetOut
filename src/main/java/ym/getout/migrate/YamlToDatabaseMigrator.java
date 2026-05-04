@@ -7,6 +7,7 @@ import ym.getout.database.DatabaseManager;
 import ym.getout.database.schema.SchemaInitializer;
 import ym.getout.database.repository.BanRepository;
 import ym.getout.database.repository.EventRepository;
+import ym.getout.database.repository.IpBanRepository;
 import ym.getout.database.repository.PlayerRepository;
 import ym.getout.database.repository.SyncStateRepository;
 import ym.getout.util.LoggerUtil;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 public class YamlToDatabaseMigrator {
 
-    public record MigrationResult(int players, int bans, int events, int syncStates) {}
+    public record MigrationResult(int players, int bans, int ipBans, int events, int syncStates) {}
 
     private final File dataFolder;
     private final Settings settings;
@@ -39,15 +40,17 @@ public class YamlToDatabaseMigrator {
 
         PlayerRepository playerRepository = new PlayerRepository(databaseManager, settings);
         BanRepository banRepository = new BanRepository(databaseManager, settings);
+        IpBanRepository ipBanRepository = new IpBanRepository(databaseManager, settings);
         EventRepository eventRepository = new EventRepository(databaseManager, settings);
         SyncStateRepository syncStateRepository = new SyncStateRepository(databaseManager, settings);
 
         int players = migratePlayers(playerRepository);
         int bans = migrateBans(banRepository);
+        int ipBans = migrateIpBans(ipBanRepository);
         int events = migrateEvents(eventRepository);
         int syncStates = migrateSyncStates(syncStateRepository);
 
-        return new MigrationResult(players, bans, events, syncStates);
+        return new MigrationResult(players, bans, ipBans, events, syncStates);
     }
 
     private int migratePlayers(PlayerRepository repository) {
@@ -64,11 +67,43 @@ public class YamlToDatabaseMigrator {
                 repository.upsert(
                         UUID.fromString(data.getString(path + ".uuid", key)),
                         data.getString(path + ".name", ""),
-                        data.getString(path + ".last_server", "")
+                        data.getString(path + ".last_server", ""),
+                        data.getString(path + ".last_ip", "")
                 );
                 count++;
             } catch (Exception e) {
                 LoggerUtil.error("Failed to migrate player entry " + key, e);
+            }
+        }
+        return count;
+    }
+
+    private int migrateIpBans(IpBanRepository repository) {
+        File file = storageFile("ip-bans.yml");
+        if (!file.exists()) return 0;
+        YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection section = data.getConfigurationSection("ip-bans");
+        if (section == null) return 0;
+
+        int count = 0;
+        for (String key : new ArrayList<>(section.getKeys(false))) {
+            String path = "ip-bans." + key;
+            if (!data.getBoolean(path + ".active", false)) continue;
+            try {
+                String operatorUuidStr = data.getString(path + ".operator_uuid");
+                UUID operatorUuid = operatorUuidStr == null || operatorUuidStr.isBlank() ? null : UUID.fromString(operatorUuidStr);
+                long id = repository.createIpBan(
+                        data.getString(path + ".ip", ""),
+                        data.getString(path + ".reason", ""),
+                        operatorUuid,
+                        data.getString(path + ".operator_name", "Console"),
+                        data.getString(path + ".server_id", settings.getServerId())
+                );
+                if (id > 0) {
+                    count++;
+                }
+            } catch (Exception e) {
+                LoggerUtil.error("Failed to migrate IP ban entry " + key, e);
             }
         }
         return count;

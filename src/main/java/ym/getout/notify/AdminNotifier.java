@@ -25,6 +25,7 @@ public class AdminNotifier {
 
         String path = switch (eventType) {
             case "BAN" -> "admin-notify.ban";
+            case "IP_BAN" -> "admin-notify.banip";
             case "TEMPBAN" -> "admin-notify.tempban";
             case "UNBAN" -> "admin-notify.unban";
             case "KICK" -> "admin-notify.kick";

@@ -18,6 +18,12 @@ ban:
   kick-message:
     - "<#FF8787>玩家 <player> 被永久封禁，编号 #<ban_id></#FF8787>"
 
+banip:
+  usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/banip <玩家名|UUID> [封禁原因]</#00E1D9></#A0AEC0>"
+  success: "<prefix><#FF4B4B>IP 封禁</#FF4B4B> <#A0AEC0>| 已封禁 <#FF7676><player></#FF7676> 的最后登录 IP <#FEE140><ip></#FEE140>，编号 <#FEE140>#<ip_ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  no-ip: "<prefix><#FEE140>无法封禁 IP</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 暂无已记录的登录 IP。</#A0AEC0>"
+  default-reason: "IP 被管理员封禁"
+
 tempban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/tempban <玩家名|UUID> <时长> [封禁原因]</#00E1D9></#A0AEC0>"
   success: "<prefix><#FA709A>临时封禁</#FA709A> <#A0AEC0>| 已临时封禁 <#FF7676><player></#FF7676>，时长：<#00F2FE><duration></#00F2FE>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
@@ -46,6 +52,8 @@ login:
     - "<#FF8787>玩家 <player> 被永久封禁，编号 #<ban_id></#FF8787>"
   temp-banned:
     - "<#FEE140>玩家 <player> 被临时封禁，编号 #<ban_id></#FEE140>"
+  ip-banned:
+    - "<#FF8787>玩家 <player> 的 IP 已被封禁，编号 #<ip_ban_id></#FF8787>"
   database-fail-close:
     - "<gradient:#FF4B4B:#FF7676><b>服务器数据暂时不可用</b></gradient>"
     - "<#A0AEC0>封禁系统暂时无法连接数据库。</#A0AEC0>"
@@ -71,6 +79,7 @@ admin-notify:
   scope-synced: "全网同步"
   generic: "<prefix><#64748B>[<scope>]</#64748B> <#FEE140><type></#FEE140> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   ban: "<prefix><#FF4B4B>[<scope> BAN]</#FF4B4B> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
+  banip: "<prefix><#FF4B4B>[<scope> BAN-IP]</#FF4B4B> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   tempban: "<prefix><#FA709A>[<scope> TBAN]</#FA709A> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   unban: "<prefix><#00F2FE>[<scope> UNBAN]</#00F2FE> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   kick: "<prefix><#FF9A44>[<scope> KICK]</#FF9A44> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"

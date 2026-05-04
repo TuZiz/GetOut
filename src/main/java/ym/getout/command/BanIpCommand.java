@@ -8,11 +8,9 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
 import ym.getout.lang.MessageService;
-import ym.getout.model.BanRecord;
 import ym.getout.model.PlayerIndex;
 import ym.getout.notify.AdminNotifier;
 import ym.getout.scheduler.SchedulerAdapter;
-import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
 import ym.getout.storage.IpBanStore;
 import ym.getout.storage.PlayerStore;
@@ -25,10 +23,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class UnbanCommand implements CommandExecutor, TabCompleter {
+public class BanIpCommand implements CommandExecutor, TabCompleter {
 
     private final PlayerStore playerRepository;
-    private final BanStore banRepository;
     private final IpBanStore ipBanRepository;
     private final EventStore eventRepository;
     private final MessageService messages;
@@ -36,12 +33,11 @@ public class UnbanCommand implements CommandExecutor, TabCompleter {
     private final SchedulerAdapter scheduler;
     private final AdminNotifier adminNotifier;
 
-    public UnbanCommand(PlayerStore playerRepository, BanStore banRepository, IpBanStore ipBanRepository,
+    public BanIpCommand(PlayerStore playerRepository, IpBanStore ipBanRepository,
                         EventStore eventRepository, MessageService messages,
                         Settings settings, SchedulerAdapter scheduler,
                         AdminNotifier adminNotifier) {
         this.playerRepository = playerRepository;
-        this.banRepository = banRepository;
         this.ipBanRepository = ipBanRepository;
         this.eventRepository = eventRepository;
         this.messages = messages;
@@ -52,16 +48,16 @@ public class UnbanCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!CommandUtil.checkPermission(sender, "getout.command.unban", messages)) return true;
+        if (!CommandUtil.checkPermission(sender, "getout.command.banip", messages)) return true;
 
         if (args.length < 1) {
-            CommandUtil.sendMessage(sender, messages, "unban.usage", Map.of());
+            CommandUtil.sendMessage(sender, messages, "banip.usage", Map.of());
             return true;
         }
 
         String targetName = args[0];
         String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
-                : messages.getString("unban.default-reason", "管理员手动解封");
+                : messages.getString("banip.default-reason", "IP 被管理员封禁");
 
         scheduler.runAsync(() -> {
             try {
@@ -72,28 +68,34 @@ public class UnbanCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                BanRecord activeBan = banRepository.findActiveBan(target.getUuid());
-                if (activeBan == null) {
-                    scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "unban.not-banned",
+                String ip = target.getLastIp();
+                if (ip == null || ip.isBlank()) {
+                    scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "banip.no-ip",
                             Map.of("player", target.getName())));
                     return;
                 }
 
-                String operatorName = sender instanceof Player player ? player.getName() : "Console";
-                banRepository.deactivateBan(target.getUuid());
-                if (target.getLastIp() != null && !target.getLastIp().isBlank()) {
-                    ipBanRepository.deactivateIpBan(target.getLastIp());
+                UUID operatorUuid = null;
+                String operatorName = "Console";
+                if (sender instanceof Player player) {
+                    operatorUuid = player.getUniqueId();
+                    operatorName = player.getName();
                 }
 
-                eventRepository.insertEvent("UNBAN", target.getUuid(), target.getName(),
-                        reason, operatorName, settings.getServerId(), "ban_id=" + activeBan.getId() + "&ip=" + target.getLastIp());
+                long ipBanId = ipBanRepository.createIpBan(ip, reason, operatorUuid, operatorName, settings.getServerId());
+                if (ipBanId < 0) {
+                    scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));
+                    return;
+                }
 
-                adminNotifier.notifyPunishment("UNBAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+                eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
+                        reason, operatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + ipBanId);
+                adminNotifier.notifyPunishment("IP_BAN", target.getName(), reason, operatorName, settings.getServerId(), false);
 
-                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "unban.success",
-                        Map.of("player", target.getName(), "reason", reason, "ban_id", String.valueOf(activeBan.getId()))));
+                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "banip.success",
+                        Map.of("player", target.getName(), "ip", ip, "ip_ban_id", String.valueOf(ipBanId), "reason", reason)));
             } catch (Exception e) {
-                LoggerUtil.error("Error executing unban command", e);
+                LoggerUtil.error("Error executing banip command", e);
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));
             }
         });

@@ -27,11 +27,17 @@ public class YamlPlayerStore implements PlayerStore {
 
     @Override
     public synchronized void upsert(UUID uuid, String name, String serverId) {
+        upsert(uuid, name, serverId, "");
+    }
+
+    @Override
+    public synchronized void upsert(UUID uuid, String name, String serverId, String lastIp) {
         String path = "players." + uuid;
         data.set(path + ".name", name);
         data.set(path + ".name_lower", name.toLowerCase());
         data.set(path + ".last_seen_at", System.currentTimeMillis());
         data.set(path + ".last_server", serverId);
+        data.set(path + ".last_ip", lastIp != null ? lastIp : "");
         save();
     }
 
@@ -71,7 +77,8 @@ public class YamlPlayerStore implements PlayerStore {
                 data.getString(path + ".name", ""),
                 data.getString(path + ".name_lower", ""),
                 data.getLong(path + ".last_seen_at", 0L),
-                data.getString(path + ".last_server", "")
+                data.getString(path + ".last_server", ""),
+                data.getString(path + ".last_ip", "")
         );
     }
 

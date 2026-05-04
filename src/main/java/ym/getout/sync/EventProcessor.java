@@ -10,6 +10,7 @@ import ym.getout.model.SyncEvent;
 import ym.getout.scheduler.SchedulerAdapter;
 import ym.getout.storage.BanStore;
 import ym.getout.storage.EventStore;
+import ym.getout.storage.IpBanStore;
 import ym.getout.storage.SyncStateStore;
 import ym.getout.util.LoggerUtil;
 import ym.getout.util.TimeFormatter;
@@ -26,6 +27,7 @@ public class EventProcessor {
 
     private final EventStore eventRepository;
     private final BanStore banRepository;
+    private final IpBanStore ipBanRepository;
     private final SyncStateStore syncStateRepository;
     private final Settings settings;
     private final SchedulerAdapter scheduler;
@@ -33,11 +35,12 @@ public class EventProcessor {
     private final AdminNotifier adminNotifier;
     private final AtomicLong lastProcessedId = new AtomicLong(0);
 
-    public EventProcessor(EventStore eventRepository, BanStore banRepository,
+    public EventProcessor(EventStore eventRepository, BanStore banRepository, IpBanStore ipBanRepository,
                           SyncStateStore syncStateRepository, Settings settings, SchedulerAdapter scheduler,
                           MessageService messages, AdminNotifier adminNotifier) {
         this.eventRepository = eventRepository;
         this.banRepository = banRepository;
+        this.ipBanRepository = ipBanRepository;
         this.syncStateRepository = syncStateRepository;
         this.settings = settings;
         this.scheduler = scheduler;
@@ -71,6 +74,7 @@ public class EventProcessor {
     private void processEvent(SyncEvent event) {
         switch (event.getEventType()) {
             case "BAN" -> handleBanEvent(event);
+            case "IP_BAN" -> handleIpBanEvent(event);
             case "TEMPBAN" -> handleTempBanEvent(event);
             case "UNBAN" -> handleUnbanEvent(event);
             case "KICK" -> handleKickEvent(event);
@@ -95,6 +99,10 @@ public class EventProcessor {
         adminNotifier.notifyPunishment("TEMPBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
+    private void handleIpBanEvent(SyncEvent event) {
+        adminNotifier.notifyPunishment("IP_BAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
+    }
+
     private void handleKickEvent(SyncEvent event) {
         kickOnlinePlayer(event.getTargetUuid(), event.getTargetName(), event.getReason(), event.getOperatorName(), "KICK", null, null);
         adminNotifier.notifyPunishment("KICK", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
@@ -102,6 +110,10 @@ public class EventProcessor {
 
     private void handleUnbanEvent(SyncEvent event) {
         banRepository.deactivateBan(event.getTargetUuid());
+        String ip = parseStringPayload(event.getPayload(), "ip");
+        if (ip != null && !ip.isBlank()) {
+            ipBanRepository.deactivateIpBan(ip);
+        }
         adminNotifier.notifyPunishment("UNBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
@@ -144,6 +156,17 @@ public class EventProcessor {
                 } catch (NumberFormatException ignored) {
                     return null;
                 }
+            }
+        }
+        return null;
+    }
+
+    private String parseStringPayload(String payload, String key) {
+        if (payload == null || payload.isBlank()) return null;
+        for (String part : payload.split("&")) {
+            String[] kv = part.split("=", 2);
+            if (kv.length == 2 && key.equalsIgnoreCase(kv[0])) {
+                return kv[1];
             }
         }
         return null;

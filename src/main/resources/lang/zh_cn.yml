@@ -14,15 +14,24 @@ general:
 ban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/ban <玩家名|UUID> [封禁原因]</#00E1D9></#A0AEC0>"
   success: "<prefix><#FF0844>永久封禁</#FF0844> <#A0AEC0>| 已永久封禁 <#FF7676><player></#FF7676>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  ip-missing: "<prefix><#FEE140>IP 未同步封禁</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 没有在线 IP 或历史登录 IP，本次只封禁玩家账号。</#A0AEC0>"
+  ip-failed: "<prefix><#FF8787>IP 封禁失败</#FF8787> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 已被封禁，但 IP <#FEE140><ip></#FEE140> 写入失败，请查看后台日志。</#A0AEC0>"
   default-reason: "违反服务器规则"
   kick-message:
     - "<#FF8787>玩家 <player> 被永久封禁，编号 #<ban_id></#FF8787>"
 
 banip:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/banip <玩家名|UUID> [封禁原因]</#00E1D9></#A0AEC0>"
-  success: "<prefix><#FF4B4B>IP 封禁</#FF4B4B> <#A0AEC0>| 已封禁 <#FF7676><player></#FF7676> 的最后登录 IP <#FEE140><ip></#FEE140>，编号 <#FEE140>#<ip_ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
-  no-ip: "<prefix><#FEE140>无法封禁 IP</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 暂无已记录的登录 IP。</#A0AEC0>"
+  success: "<prefix><#FF4B4B>IP 封禁</#FF4B4B> <#A0AEC0>| 已封禁 <#FF7676><player></#FF7676> 的 IP <#FEE140><ip></#FEE140>，编号 <#FEE140>#<ip_ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  no-ip: "<prefix><#FEE140>无法封禁 IP</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 没有在线 IP 或历史登录 IP。</#A0AEC0>"
   default-reason: "IP 被管理员封禁"
+
+unbanip:
+  usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/unbanip <玩家名|UUID|IP> [解封原因]</#00E1D9></#A0AEC0>"
+  success: "<prefix><#00F2FE>IP 解封</#00F2FE> <#A0AEC0>| 已解除 <#FF7676><player></#FF7676> 的 IP 封禁 <#FEE140><ip></#FEE140>，编号 <#FEE140>#<ip_ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  no-ip: "<prefix><#FEE140>无法解封 IP</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 没有在线 IP 或历史登录 IP。</#A0AEC0>"
+  not-banned: "<prefix><#FEE140>无需处理</#FEE140> <#A0AEC0>| IP <#FEE140><ip></#FEE140> 当前没有生效中的封禁记录。</#A0AEC0>"
+  default-reason: "管理员手动解除 IP 封禁"
 
 tempban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/tempban <玩家名|UUID> <时长> [封禁原因]</#00E1D9></#A0AEC0>"
@@ -34,6 +43,7 @@ tempban:
 unban:
   usage: "<prefix><#FEE140>命令用法</#FEE140> <#A0AEC0>| <#00E1D9>/unban <玩家名|UUID> [解封原因]</#00E1D9></#A0AEC0>"
   success: "<prefix><#00F2FE>封禁解除</#00F2FE> <#A0AEC0>| 已解除 <#FF7676><player></#FF7676> 的封禁记录 <#FEE140>#<ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
+  success-ip-only: "<prefix><#00F2FE>IP 解封</#00F2FE> <#A0AEC0>| 已解除 <#FF7676><player></#FF7676> 的 IP 封禁 <#FEE140><ip></#FEE140>，编号 <#FEE140>#<ip_ban_id></#FEE140>。原因：<#FEE140><reason></#FEE140></#A0AEC0>"
   not-banned: "<prefix><#FEE140>无需处理</#FEE140> <#A0AEC0>| 玩家 <#FF7676><player></#FF7676> 当前没有生效中的封禁记录。</#A0AEC0>"
   default-reason: "管理员手动解除封禁"
 
@@ -82,4 +92,5 @@ admin-notify:
   banip: "<prefix><#FF4B4B>[<scope> BAN-IP]</#FF4B4B> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   tempban: "<prefix><#FA709A>[<scope> TBAN]</#FA709A> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   unban: "<prefix><#00F2FE>[<scope> UNBAN]</#00F2FE> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
+  unbanip: "<prefix><#00F2FE>[<scope> UNBAN-IP]</#00F2FE> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"
   kick: "<prefix><#FF9A44>[<scope> KICK]</#FF9A44> <#A0AEC0>| 目标 <#FF7676><player></#FF7676> <#94A3B8>▪</#94A3B8> 原因 <#FEE140><reason></#FEE140> <#94A3B8>▪</#94A3B8> 操作 <#4FACFE><operator></#4FACFE> <#94A3B8>▪</#94A3B8> 来源 <#00E1D9><server></#00E1D9></#A0AEC0>"

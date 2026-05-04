@@ -9,6 +9,7 @@ import ym.getout.command.GetoutCommand;
 import ym.getout.command.KickCommand;
 import ym.getout.command.TempBanCommand;
 import ym.getout.command.UnbanCommand;
+import ym.getout.command.UnbanIpCommand;
 import ym.getout.config.ConfigService;
 import ym.getout.config.Settings;
 import ym.getout.database.DatabaseManager;
@@ -190,6 +191,7 @@ public class GetoutPlugin extends JavaPlugin {
         TempBanCommand tempBanCommand = new TempBanCommand(playerStore, banStore, eventStore, messageService, settings, scheduler, adminNotifier);
         UnbanCommand unbanCommand = new UnbanCommand(playerStore, banStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
         BanIpCommand banIpCommand = new BanIpCommand(playerStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
+        UnbanIpCommand unbanIpCommand = new UnbanIpCommand(playerStore, ipBanStore, eventStore, messageService, settings, scheduler, adminNotifier);
         KickCommand kickCommand = new KickCommand(playerStore, eventStore, messageService, settings, scheduler, adminNotifier);
         GetoutCommand getoutCommand = new GetoutCommand(this, settings, messageService, scheduler, databaseManager);
 
@@ -197,6 +199,7 @@ public class GetoutPlugin extends JavaPlugin {
         registerCommandSafe("tempban", tempBanCommand, tempBanCommand);
         registerCommandSafe("unban", unbanCommand, unbanCommand);
         registerCommandSafe("banip", banIpCommand, banIpCommand);
+        registerCommandSafe("unbanip", unbanIpCommand, unbanIpCommand);
         registerCommandSafe("kick", kickCommand, kickCommand);
         registerCommandSafe("getout", getoutCommand, getoutCommand);
     }

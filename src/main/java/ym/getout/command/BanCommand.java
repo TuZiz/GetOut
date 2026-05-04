@@ -17,7 +17,6 @@ import ym.getout.storage.EventStore;
 import ym.getout.storage.IpBanStore;
 import ym.getout.storage.PlayerStore;
 import ym.getout.util.LoggerUtil;
-import ym.getout.util.TextUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -60,6 +59,15 @@ public class BanCommand implements CommandExecutor, TabCompleter {
         String targetName = args[0];
         String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
                 : messages.getString("ban.default-reason", "违反服务器规则");
+        String onlineIp = CommandUtil.findOnlineIp(targetName);
+        UUID operatorUuid = null;
+        String operatorName = "Console";
+        if (sender instanceof Player player) {
+            operatorUuid = player.getUniqueId();
+            operatorName = player.getName();
+        }
+        UUID finalOperatorUuid = operatorUuid;
+        String finalOperatorName = operatorName;
 
         scheduler.runAsync(() -> {
             try {
@@ -70,16 +78,9 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                     return;
                 }
 
-                UUID operatorUuid = null;
-                String operatorName = "Console";
-                if (sender instanceof Player player) {
-                    operatorUuid = player.getUniqueId();
-                    operatorName = player.getName();
-                }
-
                 long banId = banRepository.createBan(
                         target.getUuid(), target.getName(), reason,
-                        operatorUuid, operatorName, null, settings.getServerId());
+                        finalOperatorUuid, finalOperatorName, null, settings.getServerId());
 
                 if (banId < 0) {
                     scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));
@@ -87,25 +88,38 @@ public class BanCommand implements CommandExecutor, TabCompleter {
                 }
 
                 eventRepository.insertEvent("BAN", target.getUuid(), target.getName(),
-                        reason, operatorName, settings.getServerId(), "ban_id=" + banId);
+                        reason, finalOperatorName, settings.getServerId(), "ban_id=" + banId);
 
-                String lastIp = target.getLastIp();
-                if (lastIp != null && !lastIp.isBlank()) {
-                    long ipBanId = ipBanRepository.createIpBan(lastIp, reason, operatorUuid, operatorName, settings.getServerId());
+                String ip = CommandUtil.firstNonBlank(onlineIp, target.getLastIp());
+                String ipWarningPath = null;
+                if (ip.isBlank()) {
+                    ipWarningPath = "ban.ip-missing";
+                } else {
+                    long ipBanId = ipBanRepository.createIpBan(ip, reason, finalOperatorUuid, finalOperatorName, settings.getServerId());
                     if (ipBanId > 0) {
                         eventRepository.insertEvent("IP_BAN", target.getUuid(), target.getName(),
-                                reason, operatorName, settings.getServerId(), "ip=" + lastIp + "&ip_ban_id=" + ipBanId);
+                                reason, finalOperatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + ipBanId);
+                    } else {
+                        ipWarningPath = "ban.ip-failed";
                     }
                 }
 
                 if (settings.isSyncKickOnlineAfterBan()) {
-                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, operatorName, banId);
+                    kickOnlinePlayer(target.getUuid(), target.getName(), reason, finalOperatorName, banId);
                 }
 
-                adminNotifier.notifyPunishment("BAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+                adminNotifier.notifyPunishment("BAN", target.getName(), reason, finalOperatorName, settings.getServerId(), false);
 
-                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "ban.success",
-                        Map.of("player", target.getName(), "reason", reason)));
+                String finalIpWarningPath = ipWarningPath;
+                String finalIp = ip;
+                scheduler.runGlobal(() -> {
+                    CommandUtil.sendMessage(sender, messages, "ban.success",
+                            Map.of("player", target.getName(), "reason", reason));
+                    if (finalIpWarningPath != null) {
+                        CommandUtil.sendMessage(sender, messages, finalIpWarningPath,
+                                Map.of("player", target.getName(), "ip", finalIp));
+                    }
+                });
 
             } catch (Exception e) {
                 LoggerUtil.error("Error executing ban command", e);

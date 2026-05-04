@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import ym.getout.config.Settings;
 import ym.getout.lang.MessageService;
 import ym.getout.model.BanRecord;
+import ym.getout.model.IpBanRecord;
 import ym.getout.model.PlayerIndex;
 import ym.getout.notify.AdminNotifier;
 import ym.getout.scheduler.SchedulerAdapter;
@@ -62,6 +63,8 @@ public class UnbanCommand implements CommandExecutor, TabCompleter {
         String targetName = args[0];
         String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
                 : messages.getString("unban.default-reason", "管理员手动解封");
+        String onlineIp = CommandUtil.findOnlineIp(targetName);
+        String operatorName = sender instanceof Player player ? player.getName() : "Console";
 
         scheduler.runAsync(() -> {
             try {
@@ -73,25 +76,41 @@ public class UnbanCommand implements CommandExecutor, TabCompleter {
                 }
 
                 BanRecord activeBan = banRepository.findActiveBan(target.getUuid());
-                if (activeBan == null) {
+                String ip = CommandUtil.firstNonBlank(onlineIp, target.getLastIp());
+                IpBanRecord activeIpBan = ip.isBlank() ? null : ipBanRepository.findActiveIpBan(ip);
+                if (activeBan == null && activeIpBan == null) {
                     scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "unban.not-banned",
                             Map.of("player", target.getName())));
                     return;
                 }
 
-                String operatorName = sender instanceof Player player ? player.getName() : "Console";
-                banRepository.deactivateBan(target.getUuid());
-                if (target.getLastIp() != null && !target.getLastIp().isBlank()) {
-                    ipBanRepository.deactivateIpBan(target.getLastIp());
+                if (activeBan != null) {
+                    banRepository.deactivateBan(target.getUuid());
+                    eventRepository.insertEvent("UNBAN", target.getUuid(), target.getName(),
+                            reason, operatorName, settings.getServerId(), "ban_id=" + activeBan.getId() + "&ip=" + ip);
                 }
 
-                eventRepository.insertEvent("UNBAN", target.getUuid(), target.getName(),
-                        reason, operatorName, settings.getServerId(), "ban_id=" + activeBan.getId() + "&ip=" + target.getLastIp());
+                if (activeIpBan != null) {
+                    ipBanRepository.deactivateIpBan(ip);
+                    if (activeBan == null) {
+                        eventRepository.insertEvent("UNBAN_IP", target.getUuid(), target.getName(),
+                                reason, operatorName, settings.getServerId(), "ip=" + ip + "&ip_ban_id=" + activeIpBan.getId());
+                    }
+                }
 
-                adminNotifier.notifyPunishment("UNBAN", target.getName(), reason, operatorName, settings.getServerId(), false);
+                adminNotifier.notifyPunishment(activeBan != null ? "UNBAN" : "UNBAN_IP",
+                        target.getName(), reason, operatorName, settings.getServerId(), false);
 
-                scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "unban.success",
-                        Map.of("player", target.getName(), "reason", reason, "ban_id", String.valueOf(activeBan.getId()))));
+                scheduler.runGlobal(() -> {
+                    if (activeBan != null) {
+                        CommandUtil.sendMessage(sender, messages, "unban.success",
+                                Map.of("player", target.getName(), "reason", reason, "ban_id", String.valueOf(activeBan.getId())));
+                    } else {
+                        CommandUtil.sendMessage(sender, messages, "unban.success-ip-only",
+                                Map.of("player", target.getName(), "reason", reason,
+                                        "ip", ip, "ip_ban_id", String.valueOf(activeIpBan.getId())));
+                    }
+                });
             } catch (Exception e) {
                 LoggerUtil.error("Error executing unban command", e);
                 scheduler.runGlobal(() -> CommandUtil.sendMessage(sender, messages, "general.database-error", Map.of()));

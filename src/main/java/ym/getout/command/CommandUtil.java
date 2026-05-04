@@ -1,14 +1,16 @@
 package ym.getout.command;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ym.getout.lang.MessageService;
 import ym.getout.util.TextUtil;
+import ym.getout.util.UuidUtil;
 
-import java.util.List;
+import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.UUID;
 
 public final class CommandUtil {
 
@@ -49,5 +51,32 @@ public final class CommandUtil {
         if (sender instanceof Player) return true;
         sendMessage(sender, messages, "general.player-only", Map.of());
         return false;
+    }
+
+    public static String findOnlineIp(String playerNameOrUuid) {
+        Player player = Bukkit.getPlayerExact(playerNameOrUuid);
+        if (player == null) {
+            UUID uuid = UuidUtil.parse(playerNameOrUuid);
+            if (uuid != null) {
+                player = Bukkit.getPlayer(uuid);
+            }
+        }
+
+        if (player == null || !player.isOnline()) {
+            return "";
+        }
+
+        InetSocketAddress address = player.getAddress();
+        if (address == null || address.getAddress() == null) {
+            return "";
+        }
+        return address.getAddress().getHostAddress();
+    }
+
+    public static String firstNonBlank(String preferred, String fallback) {
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred;
+        }
+        return fallback != null ? fallback : "";
     }
 }

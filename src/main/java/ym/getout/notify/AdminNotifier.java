@@ -28,6 +28,7 @@ public class AdminNotifier {
             case "IP_BAN" -> "admin-notify.banip";
             case "TEMPBAN" -> "admin-notify.tempban";
             case "UNBAN" -> "admin-notify.unban";
+            case "UNBAN_IP" -> "admin-notify.unbanip";
             case "KICK" -> "admin-notify.kick";
             default -> "admin-notify.generic";
         };

@@ -77,6 +77,7 @@ public class EventProcessor {
             case "IP_BAN" -> handleIpBanEvent(event);
             case "TEMPBAN" -> handleTempBanEvent(event);
             case "UNBAN" -> handleUnbanEvent(event);
+            case "UNBAN_IP" -> handleUnbanIpEvent(event);
             case "KICK" -> handleKickEvent(event);
             default -> LoggerUtil.debug("Unknown event type: " + event.getEventType());
         }
@@ -115,6 +116,16 @@ public class EventProcessor {
             ipBanRepository.deactivateIpBan(ip);
         }
         adminNotifier.notifyPunishment("UNBAN", event.getTargetName(), event.getReason(), event.getOperatorName(), event.getServerId(), true);
+    }
+
+    private void handleUnbanIpEvent(SyncEvent event) {
+        String ip = parseStringPayload(event.getPayload(), "ip");
+        if (ip != null && !ip.isBlank()) {
+            ipBanRepository.deactivateIpBan(ip);
+        }
+        String targetName = ("IP".equalsIgnoreCase(event.getTargetName()) && ip != null && !ip.isBlank())
+                ? ip : event.getTargetName();
+        adminNotifier.notifyPunishment("UNBAN_IP", targetName, event.getReason(), event.getOperatorName(), event.getServerId(), true);
     }
 
     private void kickOnlinePlayer(UUID uuid, String name, String reason, String operator, String eventType, Long expiresAt, Long banId) {

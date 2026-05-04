@@ -37,21 +37,20 @@ public class SchemaInitializer {
             ensureColumn(stmt, prefix + "players", "last_ip", "VARCHAR(64) DEFAULT ''");
             LoggerUtil.debug("Table " + prefix + "players ensured");
 
-            // Bans table: SQLite doesn't support inline INDEX in CREATE TABLE
             if (dialect == SqlDialect.SQLITE) {
                 stmt.execute(buildBansTableSqlite(prefix));
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_bans_uuid_active ON " + prefix + "bans (uuid, active)");
             } else {
                 stmt.execute(buildBansTable(dialect, prefix));
             }
+            ensureIndex(stmt, "idx_bans_uuid_active", prefix + "bans", "(uuid, active)");
             LoggerUtil.debug("Table " + prefix + "bans ensured");
 
             if (dialect == SqlDialect.SQLITE) {
                 stmt.execute(buildIpBansTableSqlite(prefix));
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_ip_bans_ip_active ON " + prefix + "ip_bans (ip, active)");
             } else {
                 stmt.execute(buildIpBansTable(dialect, prefix));
             }
+            ensureIndex(stmt, "idx_ip_bans_ip_active", prefix + "ip_bans", "(ip, active)");
             LoggerUtil.debug("Table " + prefix + "ip_bans ensured");
 
             if (dialect == SqlDialect.SQLITE) {
@@ -94,8 +93,7 @@ public class SchemaInitializer {
                 "created_at " + dialect.longType() + " NOT NULL DEFAULT 0, " +
                 "active BOOLEAN NOT NULL DEFAULT TRUE, " +
                 "server_id VARCHAR(64) DEFAULT '', " +
-                "version " + dialect.longType() + " NOT NULL DEFAULT 1, " +
-                "INDEX idx_ip_bans_ip_active (ip, active)" +
+                "version " + dialect.longType() + " NOT NULL DEFAULT 1" +
                 ")";
     }
 
@@ -126,8 +124,7 @@ public class SchemaInitializer {
                 "expires_at " + dialect.longType() + " DEFAULT NULL, " +
                 "active BOOLEAN NOT NULL DEFAULT TRUE, " +
                 "server_id VARCHAR(64) DEFAULT '', " +
-                "version " + dialect.longType() + " NOT NULL DEFAULT 1, " +
-                "INDEX idx_bans_uuid_active (uuid, active)" +
+                "version " + dialect.longType() + " NOT NULL DEFAULT 1" +
                 ")";
     }
 
@@ -189,6 +186,14 @@ public class SchemaInitializer {
             stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
         } catch (SQLException ignored) {
             // Column already exists on existing installations.
+        }
+    }
+
+    private void ensureIndex(Statement stmt, String indexName, String table, String columns) {
+        try {
+            stmt.execute("CREATE INDEX " + indexName + " ON " + table + " " + columns);
+        } catch (SQLException ignored) {
+            // Index already exists on existing installations.
         }
     }
 }

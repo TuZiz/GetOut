@@ -12,6 +12,9 @@ permissions:
   getout.command.banip:
     description: Allows banning player IP addresses
     default: op
+  getout.command.unbanip:
+    description: Allows unbanning player IP addresses
+    default: op
   getout.command.tempban:
     description: Allows temp-banning players
     default: op
@@ -30,6 +33,7 @@ permissions:
     children:
       getout.command.ban: true
       getout.command.banip: true
+      getout.command.unbanip: true
       getout.command.tempban: true
       getout.command.unban: true
       getout.command.kick: true
@@ -44,6 +48,10 @@ commands:
     description: Ban a player's last known IP
     usage: /banip <player|uuid> [reason]
     permission: getout.command.banip
+  unbanip:
+    description: Unban a player IP
+    usage: /unbanip <player|uuid|ip> [reason]
+    permission: getout.command.unbanip
   tempban:
     description: Temporarily ban a player
     usage: /tempban <player|uuid> <duration> [reason]
